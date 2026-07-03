@@ -22,13 +22,22 @@ O modulo ja possui a base minima para evolucao:
 ## Comandos uteis
 
 ```bash
-./mvnw test
-./mvnw spring-boot:run
+./mvnw -Dmaven.repo.local=.m2 test
+./mvnw -Dmaven.repo.local=.m2 spring-boot:run
 ```
 
 ## Porta padrao
 
 O backend esta configurado para subir na porta `8080`.
+
+## Variaveis de ambiente
+
+- `SERVER_PORT`: porta HTTP da API. Padrao `8080`.
+- `SPRING_DATASOURCE_URL`: URL JDBC do PostgreSQL.
+- `SPRING_DATASOURCE_USERNAME`: usuario do banco.
+- `SPRING_DATASOURCE_PASSWORD`: senha do banco.
+
+As migrations do Flyway rodam automaticamente na subida da aplicacao.
 
 ## Proximos passos
 

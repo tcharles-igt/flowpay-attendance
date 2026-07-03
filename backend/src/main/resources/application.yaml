@@ -5,14 +5,14 @@ spring:
   application:
     name: flowpay-attendance
   datasource:
-    url: jdbc:postgresql://localhost:5432/flowpay_attendance
-    username: flowpay
-    password: flowpay
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/flowpay_attendance}
+    username: ${SPRING_DATASOURCE_USERNAME:flowpay}
+    password: ${SPRING_DATASOURCE_PASSWORD:flowpay}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
+    show-sql: ${SPRING_JPA_SHOW_SQL:true}
     open-in-view: false
     properties:
       hibernate:
@@ -31,8 +31,8 @@ springdoc:
 
 logging:
   level:
-    org.hibernate.SQL: INFO
-    org.flywaydb: INFO
+    org.hibernate.SQL: ${LOGGING_LEVEL_ORG_HIBERNATE_SQL:INFO}
+    org.flywaydb: ${LOGGING_LEVEL_ORG_FLYWAYDB:INFO}
 
 app:
   attendance:

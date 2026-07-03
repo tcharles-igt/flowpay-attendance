@@ -88,6 +88,44 @@ class ApiIntegrationTest {
 	}
 
 	@Test
+	void shouldCreateAttendanceEndpointWithExpectedContract() throws Exception {
+		mockMvc.perform(post("/api/attendances")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "customerName": "Cliente Contrato",
+					  "subject": "OTHER"
+					}
+					"""))
+			.andExpect(status().isCreated())
+			.andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/attendances/")))
+			.andExpect(jsonPath("$.customerName").value("Cliente Contrato"))
+			.andExpect(jsonPath("$.subject").value("OTHER"))
+			.andExpect(jsonPath("$.team").value("OTHERS"))
+			.andExpect(jsonPath("$.status").exists())
+			.andExpect(jsonPath("$.createdAt").isNotEmpty());
+	}
+
+	@Test
+	void shouldFinishAttendanceEndpointAndReturnFinishedPayload() throws Exception {
+		var joao = findAttendantByName("Joao");
+		var inProgress = createAttendance(
+			"Cliente Finalizacao",
+			AttendanceStatus.IN_PROGRESS,
+			AttendanceSubject.CARD_PROBLEM,
+			TeamType.CARDS,
+			joao
+		);
+
+		mockMvc.perform(patch("/api/attendances/{id}/finish", inProgress.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(inProgress.getId()))
+			.andExpect(jsonPath("$.status").value("FINISHED"))
+			.andExpect(jsonPath("$.attendantId").value(joao.getId()))
+			.andExpect(jsonPath("$.finishedAt").isNotEmpty());
+	}
+
+	@Test
 	void shouldReturnDashboardSummary() throws Exception {
 		var joao = findAttendantByName("Joao");
 		createAttendance("Em andamento", AttendanceStatus.IN_PROGRESS, AttendanceSubject.CARD_PROBLEM, TeamType.CARDS, joao);
