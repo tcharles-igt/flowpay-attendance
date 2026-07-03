@@ -14,8 +14,9 @@ import { DashboardQueueItem, attendanceSubjectLabels, statusLabels, teamLabels }
 })
 export class QueueTableComponent {
   readonly queue = input<DashboardQueueItem[]>([]);
+  readonly referenceTime = input<Date | null>(null);
 
-  protected readonly columns = ['customerName', 'subject', 'team', 'status', 'createdAt'];
+  protected readonly columns = ['customerName', 'subject', 'team', 'status', 'waitTime', 'createdAt'];
   protected getSubjectLabel(item: DashboardQueueItem): string {
     return attendanceSubjectLabels[item.subject];
   }
@@ -26,5 +27,16 @@ export class QueueTableComponent {
 
   protected getTeamLabel(item: DashboardQueueItem): string {
     return teamLabels[item.team];
+  }
+
+  protected getWaitTimeLabel(item: DashboardQueueItem): string {
+    const referenceTime = this.referenceTime();
+
+    if (!referenceTime) {
+      return '--';
+    }
+
+    const waitMinutes = Math.max(0, Math.floor((referenceTime.getTime() - new Date(item.createdAt).getTime()) / 60000));
+    return `${waitMinutes} min`;
   }
 }

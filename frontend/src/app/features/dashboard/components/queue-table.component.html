@@ -32,6 +32,11 @@
           </td>
         </ng-container>
 
+        <ng-container matColumnDef="waitTime">
+          <th mat-header-cell *matHeaderCellDef>Tempo em fila</th>
+          <td mat-cell *matCellDef="let item">{{ getWaitTimeLabel(item) }}</td>
+        </ng-container>
+
         <ng-container matColumnDef="createdAt">
           <th mat-header-cell *matHeaderCellDef>Criado em</th>
           <td mat-cell *matCellDef="let item">{{ item.createdAt | date: 'dd/MM HH:mm' }}</td>

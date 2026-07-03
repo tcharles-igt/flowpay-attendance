@@ -20,10 +20,16 @@ import { QueueTableComponent } from '../components/queue-table.component';
 import { TeamSummaryComponent } from '../components/team-summary.component';
 import {
   ApiErrorResponse,
+  AttendanceStatus,
   AttendanceSubject,
   CreateAttendanceRequest,
+  DashboardStatusFilter,
+  DashboardTeamFilter,
   DashboardResponse,
-  attendanceSubjectOptions
+  attendanceSubjectOptions,
+  dashboardStatusOptions,
+  statusLabels,
+  teamLabels
 } from '../models/dashboard.model';
 import { DashboardApiService } from '../services/dashboard-api.service';
 
@@ -62,8 +68,77 @@ export class DashboardPageComponent {
   protected readonly submitting = signal(false);
   protected readonly finishingId = signal<number | null>(null);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly syncIssue = signal<string | null>(null);
+  protected readonly actionFeedback = signal<{ tone: 'success' | 'error'; title: string; message: string } | null>(null);
   protected readonly lastUpdated = signal<Date | null>(null);
   protected readonly subjectOptions = attendanceSubjectOptions;
+  protected readonly statusOptions = dashboardStatusOptions;
+  protected readonly selectedTeam = signal<DashboardTeamFilter>('ALL');
+  protected readonly selectedStatus = signal<DashboardStatusFilter>('ALL');
+
+  protected readonly teamOptions = computed(() => {
+    const snapshot = this.dashboard();
+
+    if (!snapshot) {
+      return [{ value: 'ALL' as const, label: 'Todos os times' }];
+    }
+
+    return [
+      { value: 'ALL' as const, label: 'Todos os times' },
+      ...snapshot.teams.map((team) => ({
+        value: team.team,
+        label: teamLabels[team.team]
+      }))
+    ];
+  });
+
+  protected readonly filteredDashboard = computed<DashboardResponse | null>(() => {
+    const snapshot = this.dashboard();
+
+    if (!snapshot) {
+      return null;
+    }
+
+    const selectedTeam = this.selectedTeam();
+    const selectedStatus = this.selectedStatus();
+    const teamMatches = (team: string) => selectedTeam === 'ALL' || team === selectedTeam;
+    const statusMatches = (status: AttendanceStatus) => selectedStatus === 'ALL' || status === selectedStatus;
+
+    const teams = snapshot.teams
+      .filter((team) => teamMatches(team.team))
+      .map((team) => ({
+        ...team,
+        waiting: selectedStatus === 'ALL' || selectedStatus === 'WAITING' ? team.waiting : 0,
+        inProgress: selectedStatus === 'ALL' || selectedStatus === 'IN_PROGRESS' ? team.inProgress : 0,
+        finished: selectedStatus === 'ALL' || selectedStatus === 'FINISHED' ? team.finished : 0
+      }));
+
+    const attendants = snapshot.attendants.filter((attendant) => teamMatches(attendant.team));
+    const queue = snapshot.queue.filter((item) => teamMatches(item.team) && statusMatches(item.status));
+    const inProgressAttendances = snapshot.inProgressAttendances.filter(
+      (item) => teamMatches(item.team) && statusMatches(item.status)
+    );
+
+    return {
+      ...snapshot,
+      totalAttendances: teams.reduce((sum, team) => sum + team.waiting + team.inProgress + team.finished, 0),
+      waiting: teams.reduce((sum, team) => sum + team.waiting, 0),
+      inProgress: teams.reduce((sum, team) => sum + team.inProgress, 0),
+      finished: teams.reduce((sum, team) => sum + team.finished, 0),
+      teams,
+      attendants,
+      queue,
+      inProgressAttendances
+    };
+  });
+
+  protected readonly filterSummary = computed(() => {
+    const team = this.selectedTeam();
+    const status = this.selectedStatus();
+    const teamLabel = team === 'ALL' ? 'todos os times' : teamLabels[team];
+    const statusLabel = status === 'ALL' ? 'todos os status' : statusLabels[status];
+    return `Recorte atual: ${teamLabel}, ${statusLabel}.`;
+  });
 
   protected readonly createAttendanceForm = this.formBuilder.nonNullable.group({
     customerName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
@@ -71,9 +146,10 @@ export class DashboardPageComponent {
   });
 
   protected readonly metrics = computed(() => {
-    const snapshot = this.dashboard();
+    const snapshot = this.filteredDashboard();
+    const timingTeams = this.resolveTimingTeams();
 
-    if (!snapshot) {
+    if (!snapshot || !timingTeams.length) {
       return [];
     }
 
@@ -83,6 +159,18 @@ export class DashboardPageComponent {
         value: snapshot.totalAttendances,
         description: 'Volume consolidado de atendimentos na operacao.',
         tone: 'neutral' as const
+      },
+      {
+        title: 'Fila media',
+        value: `${this.getAverageQueueTimeMinutes(timingTeams)} min`,
+        description: 'Tempo medio ate a distribuicao ou espera atual do recorte selecionado.',
+        tone: 'warn' as const
+      },
+      {
+        title: 'Atendimento medio',
+        value: `${this.getAverageServiceTimeMinutes(timingTeams)} min`,
+        description: 'Tempo medio consumido nos casos em execucao ou ja encerrados.',
+        tone: 'accent' as const
       },
       {
         title: 'Na fila',
@@ -118,10 +206,18 @@ export class DashboardPageComponent {
             tap((dashboard) => {
               this.dashboard.set(dashboard);
               this.errorMessage.set(null);
+              this.syncIssue.set(null);
               this.lastUpdated.set(new Date());
             }),
             catchError((error) => {
-              this.errorMessage.set(this.formatError(error));
+              const message = this.formatError(error);
+
+              if (this.dashboard()) {
+                this.syncIssue.set(message);
+              } else {
+                this.errorMessage.set(message);
+              }
+
               return EMPTY;
             }),
             finalize(() => {
@@ -152,6 +248,11 @@ export class DashboardPageComponent {
       .createAttendance(payload)
       .pipe(
         tap(() => {
+          this.actionFeedback.set({
+            tone: 'success',
+            title: 'Atendimento criado',
+            message: 'O novo chamado entrou no fluxo e o painel vai sincronizar o snapshot.'
+          });
           this.createAttendanceForm.reset({
             customerName: '',
             subject: 'CARD_PROBLEM'
@@ -159,7 +260,11 @@ export class DashboardPageComponent {
           this.refreshNow();
         }),
         catchError((error) => {
-          this.errorMessage.set(this.formatError(error));
+          this.actionFeedback.set({
+            tone: 'error',
+            title: 'Falha ao abrir atendimento',
+            message: this.formatError(error)
+          });
           return EMPTY;
         }),
         finalize(() => this.submitting.set(false)),
@@ -178,9 +283,20 @@ export class DashboardPageComponent {
     this.api
       .finishAttendance(attendanceId)
       .pipe(
-        tap(() => this.refreshNow()),
+        tap(() => {
+          this.actionFeedback.set({
+            tone: 'success',
+            title: 'Atendimento finalizado',
+            message: 'A capacidade foi liberada e o dashboard vai buscar a redistribuicao atualizada.'
+          });
+          this.refreshNow();
+        }),
         catchError((error) => {
-          this.errorMessage.set(this.formatError(error));
+          this.actionFeedback.set({
+            tone: 'error',
+            title: 'Falha ao finalizar atendimento',
+            message: this.formatError(error)
+          });
           return EMPTY;
         }),
         finalize(() => this.finishingId.set(null)),
@@ -191,6 +307,18 @@ export class DashboardPageComponent {
 
   protected refreshNow(): void {
     this.manualRefresh$.next();
+  }
+
+  protected updateTeamFilter(team: DashboardTeamFilter): void {
+    this.selectedTeam.set(team);
+  }
+
+  protected updateStatusFilter(status: DashboardStatusFilter): void {
+    this.selectedStatus.set(status);
+  }
+
+  protected clearActionFeedback(): void {
+    this.actionFeedback.set(null);
   }
 
   protected hasFieldError(fieldName: 'customerName'): boolean {
@@ -216,5 +344,46 @@ export class DashboardPageComponent {
     }
 
     return 'Nao foi possivel atualizar o dashboard agora.';
+  }
+
+  private resolveTimingTeams() {
+    const snapshot = this.dashboard();
+    const selectedTeam = this.selectedTeam();
+
+    if (!snapshot) {
+      return [];
+    }
+
+    return snapshot.teams.filter((team) => selectedTeam === 'ALL' || team.team === selectedTeam);
+  }
+
+  private getAverageQueueTimeMinutes(teams: DashboardResponse['teams']): number {
+    const totalAttendances = teams.reduce((sum, team) => sum + team.waiting + team.inProgress + team.finished, 0);
+
+    if (!totalAttendances) {
+      return 0;
+    }
+
+    const weightedSum = teams.reduce(
+      (sum, team) => sum + team.averageQueueTimeMinutes * (team.waiting + team.inProgress + team.finished),
+      0
+    );
+
+    return Math.round(weightedSum / totalAttendances);
+  }
+
+  private getAverageServiceTimeMinutes(teams: DashboardResponse['teams']): number {
+    const eligibleAttendances = teams.reduce((sum, team) => sum + team.inProgress + team.finished, 0);
+
+    if (!eligibleAttendances) {
+      return 0;
+    }
+
+    const weightedSum = teams.reduce(
+      (sum, team) => sum + team.averageServiceTimeMinutes * (team.inProgress + team.finished),
+      0
+    );
+
+    return Math.round(weightedSum / eligibleAttendances);
   }
 }

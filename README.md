@@ -10,6 +10,9 @@ Solucao Full Stack para o desafio tecnico FlowPay. O sistema distribui atendimen
 - fila `WAITING` quando o time esta lotado;
 - redistribuicao automatica ao finalizar um atendimento;
 - dashboard com metricas, fila, atendentes e atendimentos em andamento.
+- filtros por time e status para leitura operacional segmentada;
+- metricas de tempo medio em fila e tempo medio de atendimento;
+- feedback visual mais claro quando a API falha ou quando o painel exibe o ultimo snapshot valido.
 
 ## Pre-requisitos para execucao local
 
@@ -116,7 +119,7 @@ Exemplo:
 ### Dashboard
 
 - `GET /api/dashboard`
-  Retorna metricas agregadas, resumo por time, atendentes, fila e atendimentos ativos.
+  Retorna metricas agregadas, tempos medios, resumo por time, atendentes, fila e atendimentos ativos.
 
 ### Atendentes
 
@@ -172,6 +175,9 @@ Isso permite testar de imediato:
 - Dashboard com polling.
   O frontend consulta a API periodicamente para manter a operacao atualizada sem complexidade extra de WebSocket.
 
+- Swagger/OpenAPI com exemplos e contratos de erro.
+  A navegacao da API fica autoexplicativa para validacao manual e para entendimento rapido do fluxo principal.
+
 - PostgreSQL com Flyway.
   Garante ambiente reproduzivel, schema versionado e subida automatica do banco.
 
@@ -217,3 +223,13 @@ npm test
 - filtros e ordenacao avancada no dashboard;
 - testes E2E cobrindo o fluxo completo via interface;
 - observabilidade e healthchecks mais ricos no backend.
+
+## SSE vs WebSocket
+
+Para a proxima iteracao, a melhor evolucao inicial e SSE.
+
+- SSE encaixa melhor no problema atual porque o dashboard e essencialmente somente leitura.
+- A API pode publicar eventos de criacao, redistribuicao e finalizacao sem manter protocolo bidirecional.
+- O frontend fica mais simples do que com WebSocket, inclusive para reconnect e degradacao para polling.
+
+WebSocket passa a fazer sentido se a operacao evoluir para comandos colaborativos em tempo real, presenca de operadores ou sincronizacao bidirecional mais intensa.

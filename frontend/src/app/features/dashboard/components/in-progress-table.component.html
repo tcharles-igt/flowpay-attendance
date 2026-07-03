@@ -30,6 +30,11 @@
           <td mat-cell *matCellDef="let item">{{ item.attendantName }}</td>
         </ng-container>
 
+        <ng-container matColumnDef="serviceTime">
+          <th mat-header-cell *matHeaderCellDef>Tempo em atendimento</th>
+          <td mat-cell *matCellDef="let item">{{ getServiceTimeLabel(item) }}</td>
+        </ng-container>
+
         <ng-container matColumnDef="startedAt">
           <th mat-header-cell *matHeaderCellDef>Inicio</th>
           <td mat-cell *matCellDef="let item">{{ item.startedAt | date: 'dd/MM HH:mm' }}</td>

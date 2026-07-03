@@ -21,6 +21,10 @@
             <span>Ativos {{ row.inProgress }}</span>
             <span>Finalizados {{ row.finished }}</span>
           </div>
+          <div class="team-summary__timings">
+            <span>Fila media {{ row.queueTimeLabel }}</span>
+            <span>Atendimento medio {{ row.serviceTimeLabel }}</span>
+          </div>
         </article>
       }
     </div>

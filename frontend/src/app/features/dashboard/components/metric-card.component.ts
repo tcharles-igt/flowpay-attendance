@@ -9,7 +9,7 @@ import { MatCardModule } from '@angular/material/card';
 })
 export class MetricCardComponent {
   readonly title = input.required<string>();
-  readonly value = input.required<number>();
+  readonly value = input.required<string | number>();
   readonly description = input.required<string>();
   readonly tone = input<'neutral' | 'accent' | 'warn'>('neutral');
 }

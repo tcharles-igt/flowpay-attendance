@@ -72,6 +72,55 @@
     </mat-card>
   </section>
 
+  <mat-card class="filters-card">
+    <div class="section-heading">
+      <div>
+        <p class="section-heading__eyebrow">Filtros operacionais</p>
+        <h2>Refinar leitura do dashboard</h2>
+      </div>
+      <p class="section-heading__copy">Recorte por time e status para reduzir ruido quando o volume crescer.</p>
+    </div>
+
+    <div class="filters-card__controls">
+      <mat-form-field appearance="outline">
+        <mat-label>Time</mat-label>
+        <mat-select [value]="selectedTeam()" (selectionChange)="updateTeamFilter($event.value)">
+          @for (option of teamOptions(); track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Status</mat-label>
+        <mat-select [value]="selectedStatus()" (selectionChange)="updateStatusFilter($event.value)">
+          @for (option of statusOptions; track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <p class="filters-card__summary">{{ filterSummary() }}</p>
+  </mat-card>
+
+  @if (syncIssue()) {
+    <mat-card class="feedback-card feedback-card--warning">
+      <strong>Exibindo ultimo snapshot valido</strong>
+      <p>{{ syncIssue() }}</p>
+    </mat-card>
+  }
+
+  @if (actionFeedback(); as feedback) {
+    <mat-card class="feedback-card" [class.feedback-card--error]="feedback.tone === 'error'" [class.feedback-card--success]="feedback.tone === 'success'">
+      <div>
+        <strong>{{ feedback.title }}</strong>
+        <p>{{ feedback.message }}</p>
+      </div>
+      <button mat-stroked-button type="button" (click)="clearActionFeedback()">Fechar</button>
+    </mat-card>
+  }
+
   @if (errorMessage()) {
     <mat-card class="feedback-card feedback-card--error">
       <strong>Falha na sincronizacao</strong>
@@ -87,7 +136,7 @@
         <p>Buscando dados do dashboard e montando a visao inicial.</p>
       </div>
     </mat-card>
-  } @else if (dashboard(); as dashboard) {
+  } @else if (filteredDashboard(); as dashboard) {
     <section class="metrics-grid">
       @for (metric of metrics(); track metric.title) {
         <app-metric-card
@@ -105,10 +154,11 @@
     </section>
 
     <section class="content-grid content-grid--bottom">
-      <app-queue-table [queue]="dashboard.queue"></app-queue-table>
+      <app-queue-table [queue]="dashboard.queue" [referenceTime]="lastUpdated()"></app-queue-table>
       <app-in-progress-table
         [attendances]="dashboard.inProgressAttendances"
         [finishingId]="finishingId()"
+        [referenceTime]="lastUpdated()"
         (finish)="finishAttendance($event)"
       ></app-in-progress-table>
     </section>

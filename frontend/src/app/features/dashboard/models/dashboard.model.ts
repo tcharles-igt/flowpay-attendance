@@ -7,6 +7,8 @@ export interface DashboardTeamSummary {
   waiting: number;
   inProgress: number;
   finished: number;
+  averageQueueTimeMinutes: number;
+  averageServiceTimeMinutes: number;
 }
 
 export interface DashboardAttendant {
@@ -42,11 +44,16 @@ export interface DashboardResponse {
   waiting: number;
   inProgress: number;
   finished: number;
+  averageQueueTimeMinutes: number;
+  averageServiceTimeMinutes: number;
   teams: DashboardTeamSummary[];
   attendants: DashboardAttendant[];
   queue: DashboardQueueItem[];
   inProgressAttendances: DashboardInProgressAttendance[];
 }
+
+export type DashboardTeamFilter = TeamType | 'ALL';
+export type DashboardStatusFilter = AttendanceStatus | 'ALL';
 
 export interface CreateAttendanceRequest {
   customerName: string;
@@ -81,3 +88,10 @@ export const statusLabels: Record<AttendanceStatus, string> = {
   IN_PROGRESS: 'Em atendimento',
   FINISHED: 'Finalizado'
 };
+
+export const dashboardStatusOptions: Array<{ value: DashboardStatusFilter; label: string }> = [
+  { value: 'ALL', label: 'Todos os status' },
+  { value: 'WAITING', label: 'Na fila' },
+  { value: 'IN_PROGRESS', label: 'Em atendimento' },
+  { value: 'FINISHED', label: 'Finalizado' }
+];

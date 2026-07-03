@@ -22,7 +22,9 @@ export class TeamSummaryComponent {
         ...team,
         label: teamLabels[team.team],
         total,
-        completion
+        completion,
+        queueTimeLabel: `${team.averageQueueTimeMinutes} min`,
+        serviceTimeLabel: `${team.averageServiceTimeMinutes} min`
       };
     })
   );
