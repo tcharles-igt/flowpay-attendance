@@ -1,9 +1,15 @@
 .finish-button {
-  min-width: 8rem;
-  background: linear-gradient(135deg, #ea580c, #f97316);
+  min-width: 96px;
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
   color: white;
+  font-weight: 700;
 }
 
 .finish-button mat-spinner {
   margin-inline: auto;
+}
+
+.dashboard-table td:first-child,
+.dashboard-table td:nth-child(4) {
+  font-weight: 700;
 }

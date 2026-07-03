@@ -1,12 +1,17 @@
 <mat-toolbar class="dashboard-toolbar">
-  <div class="dashboard-toolbar__brand">
-    <span class="dashboard-toolbar__eyebrow">FlowPay Attendance</span>
-    <strong>Dashboard operacional</strong>
-  </div>
+  <div class="dashboard-toolbar__inner">
+    <div class="dashboard-toolbar__brand">
+      <span class="dashboard-toolbar__eyebrow">FlowPay Attendance</span>
+      <strong>Dashboard operacional</strong>
+    </div>
 
-  <button mat-stroked-button type="button" (click)="refreshNow()" [disabled]="refreshing() || loading()">
-    Atualizar agora
-  </button>
+    <div class="dashboard-toolbar__meta">
+      <span class="dashboard-toolbar__pill">Painel vivo</span>
+      <button mat-stroked-button type="button" (click)="refreshNow()" [disabled]="refreshing() || loading()">
+        Atualizar agora
+      </button>
+    </div>
+  </div>
 </mat-toolbar>
 
 @if (refreshing()) {
@@ -21,6 +26,23 @@
       <p class="hero-copy">
         O painel consulta a API a cada 5 segundos para manter a operacao atualizada sem refresh manual.
       </p>
+
+      @if (filteredDashboard(); as dashboard) {
+        <div class="hero-highlights">
+          <article class="hero-highlights__item">
+            <span>Fila</span>
+            <strong>{{ dashboard.waiting }}</strong>
+          </article>
+          <article class="hero-highlights__item">
+            <span>Ativos</span>
+            <strong>{{ dashboard.inProgress }}</strong>
+          </article>
+          <article class="hero-highlights__item">
+            <span>Times</span>
+            <strong>{{ dashboard.teams.length }}</strong>
+          </article>
+        </div>
+      }
 
       <div class="hero-metadata">
         <span>Polling automatico de 5s</span>
@@ -44,17 +66,17 @@
       </div>
 
       <form class="attendance-form" [formGroup]="createAttendanceForm" (ngSubmit)="submitAttendance()">
+        <label class="field-label" for="customer-name">Nome do cliente</label>
         <mat-form-field appearance="outline">
-          <mat-label>Nome do cliente</mat-label>
-          <input matInput formControlName="customerName" placeholder="Ex.: Maria Souza">
+          <input id="customer-name" matInput formControlName="customerName" placeholder="Ex.: Maria Souza">
           @if (hasFieldError('customerName')) {
             <mat-error>Informe um nome com pelo menos 3 caracteres.</mat-error>
           }
         </mat-form-field>
 
+        <label class="field-label" for="attendance-subject">Assunto</label>
         <mat-form-field appearance="outline">
-          <mat-label>Assunto</mat-label>
-          <mat-select formControlName="subject">
+          <mat-select id="attendance-subject" formControlName="subject">
             @for (option of subjectOptions; track option.value) {
               <mat-option [value]="option.value">{{ option.label }}</mat-option>
             }
@@ -69,6 +91,8 @@
           }
         </button>
       </form>
+
+      <p class="hero-card__footnote">Entrada direta para abastecer a fila sem perder o contexto operacional.</p>
     </mat-card>
   </section>
 
