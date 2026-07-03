@@ -1,10 +1,7 @@
 :host {
   display: block;
   min-height: 100dvh;
-  background:
-    radial-gradient(circle at top left, rgba(96, 165, 250, 0.16), transparent 24rem),
-    radial-gradient(circle at top right, rgba(249, 115, 22, 0.14), transparent 22rem),
-    linear-gradient(180deg, #f8fbff 0%, #f5f8ff 42%, #edf3ff 100%);
+  background: #edf3ff;
 }
 
 .dashboard-toolbar {
@@ -76,7 +73,7 @@
 
 .primary-button {
   min-height: 36px;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  background: var(--accent-blue);
   color: white;
   font-weight: 700;
   letter-spacing: 0.01em;
@@ -84,7 +81,7 @@
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: var(--space-8);
 }
 
@@ -96,7 +93,7 @@
 }
 
 .filters-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.94));
+  background: rgba(255, 255, 255, 0.97);
 }
 
 .filters-card__controls {

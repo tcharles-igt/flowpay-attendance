@@ -1,5 +1,10 @@
-<mat-card class="metric-card" [class.accent]="tone() === 'accent'" [class.warn]="tone() === 'warn'">
+<mat-card
+  class="metric-card"
+  [class.accent]="tone() === 'accent'"
+  [class.warn]="tone() === 'warn'"
+  [attr.title]="description()"
+  [attr.aria-label]="title() + ': ' + description()"
+>
   <p class="metric-card__eyebrow">{{ title() }}</p>
   <strong class="metric-card__value">{{ value() }}</strong>
-  <p class="metric-card__description">{{ description() }}</p>
 </mat-card>

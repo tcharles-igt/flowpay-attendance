@@ -1,28 +1,19 @@
 .metric-card {
-  min-height: 7.25rem;
+  min-height: 6.2rem;
   position: relative;
   overflow: hidden;
   padding: var(--space-12);
   border: 1px solid var(--line-soft);
-  background:
-    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 32%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(239, 246, 255, 0.92)),
-    var(--surface-color);
+  background: #eff6ff;
   box-shadow: var(--shadow-soft);
 }
 
 .metric-card.accent {
-  background:
-    radial-gradient(circle at top right, rgba(20, 184, 166, 0.12), transparent 32%),
-    linear-gradient(135deg, rgba(240, 253, 250, 0.97), rgba(220, 252, 231, 0.92)),
-    var(--surface-color);
+  background: #ecfdf5;
 }
 
 .metric-card.warn {
-  background:
-    radial-gradient(circle at top right, rgba(249, 115, 22, 0.12), transparent 32%),
-    linear-gradient(135deg, rgba(255, 247, 237, 0.97), rgba(254, 242, 242, 0.92)),
-    var(--surface-color);
+  background: #fff7ed;
 }
 
 .metric-card__eyebrow {
@@ -36,22 +27,14 @@
 
 .metric-card__value {
   display: block;
-  margin-bottom: var(--space-4);
   color: var(--ink-strong);
-  font-size: clamp(1.45rem, 2.5vw, 2.05rem);
+  font-size: clamp(1.4rem, 2.3vw, 1.95rem);
   line-height: 1;
-}
-
-.metric-card__description {
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 0.82rem;
-  line-height: 1.4;
 }
 
 @media (max-width: 720px) {
   .metric-card {
-    min-height: 6.5rem;
+    min-height: 5.6rem;
     padding: var(--space-10);
   }
 }
