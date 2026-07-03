@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+
+.dialog-copy {
+  margin: 0 0 1rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.attendance-form {
+  display: grid;
+  gap: var(--space-8);
+  min-width: min(32rem, 100%);
+  padding-top: var(--space-4);
+}
+
+.field-label {
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}

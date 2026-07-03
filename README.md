@@ -12,7 +12,8 @@ Solucao Full Stack para o desafio tecnico FlowPay. O sistema distribui atendimen
 - dashboard com metricas, fila, atendentes e atendimentos em andamento.
 - filtros por time e status para leitura operacional segmentada;
 - metricas de tempo medio em fila e tempo medio de atendimento;
-- feedback visual mais claro quando a API falha ou quando o painel exibe o ultimo snapshot valido.
+- feedback visual mais claro quando a API falha ou quando o painel exibe o ultimo snapshot valido;
+- sincronizacao do dashboard em tempo real via SSE, com refresh manual como fallback.
 
 ## Pre-requisitos para execucao local
 
@@ -121,6 +122,9 @@ Exemplo:
 - `GET /api/dashboard`
   Retorna metricas agregadas, tempos medios, resumo por time, atendentes, fila e atendimentos ativos.
 
+- `GET /api/dashboard/events`
+  Abre uma stream `text/event-stream` com snapshot inicial, atualizacoes do dashboard e heartbeat periodico.
+
 ### Atendentes
 
 - `GET /api/attendants`
@@ -172,8 +176,8 @@ Isso permite testar de imediato:
 - Regra centralizada no backend.
   A distribuicao, fila e redistribuicao ficam em um unico ponto confiavel, sem depender do frontend.
 
-- Dashboard com polling.
-  O frontend consulta a API periodicamente para manter a operacao atualizada sem complexidade extra de WebSocket.
+- Dashboard com snapshot HTTP e stream SSE.
+  O frontend recebe snapshot inicial e atualizacoes em tempo real, mantendo refresh manual como degradacao simples.
 
 - Swagger/OpenAPI com exemplos e contratos de erro.
   A navegacao da API fica autoexplicativa para validacao manual e para entendimento rapido do fluxo principal.
@@ -212,24 +216,24 @@ npm test
 ## Limites da entrega
 
 - nao existe autenticacao nem controle de acesso;
-- o dashboard usa polling em vez de atualizacao em tempo real via push;
 - nao ha observabilidade avancada, tracing ou metricas de producao;
 - a estrategia de distribuicao atual prioriza capacidade disponivel e ordem de fila, sem heuristicas adicionais.
 
 ## Evolucoes futuras
 
 - autenticacao e perfis operacionais;
-- WebSocket ou SSE para atualizacao em tempo real;
+- WebSocket para comandos colaborativos ou sincronizacao bidirecional;
 - filtros e ordenacao avancada no dashboard;
 - testes E2E cobrindo o fluxo completo via interface;
 - observabilidade e healthchecks mais ricos no backend.
 
-## SSE vs WebSocket
+## Atualizacao em tempo real
 
-Para a proxima iteracao, a melhor evolucao inicial e SSE.
+Nesta iteracao, o dashboard usa SSE.
 
-- SSE encaixa melhor no problema atual porque o dashboard e essencialmente somente leitura.
-- A API pode publicar eventos de criacao, redistribuicao e finalizacao sem manter protocolo bidirecional.
-- O frontend fica mais simples do que com WebSocket, inclusive para reconnect e degradacao para polling.
+- `GET /api/dashboard` continua como endpoint de snapshot e fallback manual.
+- `GET /api/dashboard/events` entrega snapshot inicial ao conectar e publica `dashboard-updated` apos criacao ou finalizacao de atendimento.
+- A stream envia heartbeat periodico para reduzir timeouts intermediarios.
+- O frontend tenta reconectar automaticamente pela semantica nativa do `EventSource` e sinaliza degradacao quando exibe apenas o ultimo snapshot valido.
 
-WebSocket passa a fazer sentido se a operacao evoluir para comandos colaborativos em tempo real, presenca de operadores ou sincronizacao bidirecional mais intensa.
+WebSocket continua desnecessario enquanto o fluxo do dashboard permanecer predominantemente somente leitura.

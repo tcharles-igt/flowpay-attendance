@@ -324,6 +324,47 @@ td {
   line-height: 1.5;
 }
 
+.mat-mdc-snack-bar-container.app-toast-shell {
+  --mdc-snackbar-container-color: rgba(255, 255, 255, 0.96);
+  --mdc-snackbar-supporting-text-color: var(--ink-strong);
+  --mat-snack-bar-button-color: var(--accent-blue);
+  color-scheme: light;
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+}
+
+.mat-mdc-snack-bar-container.app-toast-shell--success {
+  --mdc-snackbar-container-color: rgba(236, 253, 245, 0.98);
+  border-color: rgba(16, 185, 129, 0.18);
+}
+
+.mat-mdc-snack-bar-container.app-toast-shell--error {
+  --mdc-snackbar-container-color: rgba(254, 242, 242, 0.98);
+  border-color: rgba(239, 68, 68, 0.18);
+}
+
+.mat-mdc-snack-bar-container.app-toast-shell .mdc-snackbar__surface {
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: var(--ink-strong) !important;
+  box-shadow: none !important;
+}
+
+.mat-mdc-snack-bar-container.app-toast-shell--success .mdc-snackbar__surface {
+  background: rgba(236, 253, 245, 0.98) !important;
+}
+
+.mat-mdc-snack-bar-container.app-toast-shell--error .mdc-snackbar__surface {
+  background: rgba(254, 242, 242, 0.98) !important;
+}
+
+.mat-mdc-snack-bar-container.app-toast-shell .mdc-snackbar__label,
+.mat-mdc-snack-bar-container.app-toast-shell .mat-mdc-snack-bar-label {
+  padding: 14px 16px !important;
+  color: var(--ink-strong) !important;
+  font-family: var(--font-family-base) !important;
+}
+
 @media (max-width: 720px) {
   .data-card {
     padding: var(--space-12);

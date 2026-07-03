@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>Novo atendimento</h2>
+
+<mat-dialog-content>
+  <p class="dialog-copy">Abra um chamado rapido sem sair do acompanhamento operacional.</p>
+
+  <form class="attendance-form" [formGroup]="form" (ngSubmit)="submit()">
+    <label class="field-label" for="customer-name">Nome do cliente</label>
+    <mat-form-field appearance="outline">
+      <input id="customer-name" matInput formControlName="customerName" placeholder="Ex.: Maria Souza">
+      @if (hasFieldError('customerName')) {
+        <mat-error>Informe um nome com pelo menos 3 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <label class="field-label" for="attendance-subject">Assunto</label>
+    <mat-form-field appearance="outline">
+      <mat-select id="attendance-subject" formControlName="subject">
+        @for (option of subjectOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Cancelar</button>
+  <button mat-flat-button type="button" class="primary-button" (click)="submit()">Criar atendimento</button>
+</mat-dialog-actions>

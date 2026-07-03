@@ -7,8 +7,8 @@
 
     <div class="dashboard-toolbar__meta">
       <span class="dashboard-toolbar__pill">Painel vivo</span>
-      <button mat-stroked-button type="button" (click)="refreshNow()" [disabled]="refreshing() || loading()">
-        Atualizar agora
+      <button mat-flat-button type="button" class="primary-button" (click)="openNewAttendanceDialog()" [disabled]="submitting()">
+        Novo atendimento
       </button>
     </div>
   </div>
@@ -19,90 +19,11 @@
 }
 
 <main class="dashboard-page">
-  <section class="hero-grid">
-    <mat-card class="hero-card hero-card--intro">
-      <p class="section-heading__eyebrow">Monitoramento continuo</p>
-      <h1>Uma visao unica para fila, capacidade e resolucao.</h1>
-      <p class="hero-copy">
-        O painel consulta a API a cada 5 segundos para manter a operacao atualizada sem refresh manual.
-      </p>
-
-      @if (filteredDashboard(); as dashboard) {
-        <div class="hero-highlights">
-          <article class="hero-highlights__item">
-            <span>Fila</span>
-            <strong>{{ dashboard.waiting }}</strong>
-          </article>
-          <article class="hero-highlights__item">
-            <span>Ativos</span>
-            <strong>{{ dashboard.inProgress }}</strong>
-          </article>
-          <article class="hero-highlights__item">
-            <span>Times</span>
-            <strong>{{ dashboard.teams.length }}</strong>
-          </article>
-        </div>
-      }
-
-      <div class="hero-metadata">
-        <span>Polling automatico de 5s</span>
-        <span>
-          @if (lastUpdated()) {
-            Atualizado {{ lastUpdated() | date: 'dd/MM HH:mm:ss' }}
-          } @else {
-            Aguardando primeira carga
-          }
-        </span>
-      </div>
-    </mat-card>
-
-    <mat-card class="hero-card hero-card--form">
-      <div class="section-heading">
-        <div>
-          <p class="section-heading__eyebrow">Novo atendimento</p>
-          <h2>Abrir chamado rapido</h2>
-        </div>
-        <p class="section-heading__copy">Fluxo minimo para alimentar a fila sem sair do dashboard.</p>
-      </div>
-
-      <form class="attendance-form" [formGroup]="createAttendanceForm" (ngSubmit)="submitAttendance()">
-        <label class="field-label" for="customer-name">Nome do cliente</label>
-        <mat-form-field appearance="outline">
-          <input id="customer-name" matInput formControlName="customerName" placeholder="Ex.: Maria Souza">
-          @if (hasFieldError('customerName')) {
-            <mat-error>Informe um nome com pelo menos 3 caracteres.</mat-error>
-          }
-        </mat-form-field>
-
-        <label class="field-label" for="attendance-subject">Assunto</label>
-        <mat-form-field appearance="outline">
-          <mat-select id="attendance-subject" formControlName="subject">
-            @for (option of subjectOptions; track option.value) {
-              <mat-option [value]="option.value">{{ option.label }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <button mat-flat-button type="submit" class="primary-button" [disabled]="submitting()">
-          @if (submitting()) {
-            Criando...
-          } @else {
-            Abrir atendimento
-          }
-        </button>
-      </form>
-
-      <p class="hero-card__footnote">Entrada direta para abastecer a fila sem perder o contexto operacional.</p>
-    </mat-card>
-  </section>
-
   <mat-card class="filters-card">
     <div class="section-heading">
       <div>
         <p class="section-heading__eyebrow">Filtros operacionais</p>
-        <h2>Refinar leitura do dashboard</h2>
       </div>
-      <p class="section-heading__copy">Recorte por time e status para reduzir ruido quando o volume crescer.</p>
     </div>
 
     <div class="filters-card__controls">
@@ -132,16 +53,6 @@
     <mat-card class="feedback-card feedback-card--warning">
       <strong>Exibindo ultimo snapshot valido</strong>
       <p>{{ syncIssue() }}</p>
-    </mat-card>
-  }
-
-  @if (actionFeedback(); as feedback) {
-    <mat-card class="feedback-card" [class.feedback-card--error]="feedback.tone === 'error'" [class.feedback-card--success]="feedback.tone === 'success'">
-      <div>
-        <strong>{{ feedback.title }}</strong>
-        <p>{{ feedback.message }}</p>
-      </div>
-      <button mat-stroked-button type="button" (click)="clearActionFeedback()">Fechar</button>
     </mat-card>
   }
 

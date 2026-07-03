@@ -53,13 +53,11 @@
   padding: var(--space-16) 0 var(--space-24);
 }
 
-.hero-grid,
 .content-grid {
   display: grid;
   gap: var(--space-16);
 }
 
-.hero-grid,
 .content-grid--top {
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
 }
@@ -68,7 +66,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.hero-card,
 .filters-card,
 .feedback-card {
   border: 1px solid var(--line-soft);
@@ -77,75 +74,12 @@
   padding: var(--space-16);
 }
 
-.hero-card--intro {
-  overflow: hidden;
-  background:
-    radial-gradient(circle at top right, rgba(37, 99, 235, 0.12), transparent 30%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(239, 246, 255, 0.94)),
-    var(--surface-color);
-}
-
-.hero-card--intro h1 {
-  margin: 0 0 var(--space-12);
-  color: var(--ink-strong);
-  font-size: clamp(2rem, 4vw, 3.35rem);
-  line-height: 1;
-}
-
-.hero-copy {
-  max-width: 52ch;
-  margin: 0;
-  color: var(--ink-soft);
-  font-size: 1rem;
-  line-height: 1.6;
-}
-
-.hero-metadata {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-8);
-  margin-top: var(--space-16);
-}
-
-.hero-metadata span {
-  padding: var(--space-8) var(--space-12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(37, 99, 235, 0.1);
-  color: var(--ink-soft);
-  font-size: 0.88rem;
-}
-
-.hero-card--form {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.94));
-}
-
-.attendance-form {
-  display: grid;
-  gap: var(--space-8);
-}
-
-.field-label {
-  color: var(--ink-soft);
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1;
-}
-
 .primary-button {
   min-height: 36px;
   background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
   color: white;
   font-weight: 700;
   letter-spacing: 0.01em;
-}
-
-.hero-card__footnote {
-  margin: var(--space-8) 0 0;
-  color: var(--ink-soft);
-  font-size: 0.9rem;
-  line-height: 1.5;
 }
 
 .metrics-grid {
@@ -198,15 +132,10 @@
 }
 
 @media (max-width: 1080px) {
-  .hero-grid,
   .content-grid--top,
   .content-grid--bottom,
   .metrics-grid {
     grid-template-columns: 1fr;
-  }
-
-  .hero-highlights {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .filters-card__controls {
@@ -225,7 +154,6 @@
     flex-direction: column;
   }
 
-  .hero-card,
   .filters-card,
   .feedback-card {
     padding: var(--space-12);
