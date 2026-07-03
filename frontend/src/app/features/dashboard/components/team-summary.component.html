@@ -1,0 +1,30 @@
+<mat-card class="team-summary">
+  <div class="section-heading">
+    <div>
+      <p class="section-heading__eyebrow">Resumo por time</p>
+      <h2>Distribuicao operacional</h2>
+    </div>
+    <p class="section-heading__copy">Fila, atendimentos ativos e historico encerrado por especialidade.</p>
+  </div>
+
+  @if (rows().length) {
+    <div class="team-summary__grid">
+      @for (row of rows(); track row.team) {
+        <article class="team-summary__item">
+          <div class="team-summary__header">
+            <strong>{{ row.label }}</strong>
+            <span>{{ row.total }} casos</span>
+          </div>
+          <mat-progress-bar mode="determinate" [value]="row.completion"></mat-progress-bar>
+          <div class="team-summary__stats">
+            <span>Fila {{ row.waiting }}</span>
+            <span>Ativos {{ row.inProgress }}</span>
+            <span>Finalizados {{ row.finished }}</span>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <p class="empty-copy">Nenhum time com volume registrado ainda.</p>
+  }
+</mat-card>

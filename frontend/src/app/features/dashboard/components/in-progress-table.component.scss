@@ -1,0 +1,9 @@
+.finish-button {
+  min-width: 8rem;
+  background: linear-gradient(135deg, #ea580c, #f97316);
+  color: white;
+}
+
+.finish-button mat-spinner {
+  margin-inline: auto;
+}

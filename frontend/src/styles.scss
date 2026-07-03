@@ -1,1 +1,67 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Sans:wght@400;500;600;700&display=swap');
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+:root {
+  --surface-color: #ffffff;
+  --ink-strong: #172033;
+  --ink-soft: #516079;
+  --muted-color: #7c8aa5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  color: var(--ink-strong);
+  font-family: 'Instrument Sans', 'Segoe UI', sans-serif;
+  background: #f8fafc;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+button {
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+}
+
+.empty-copy {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.data-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.table-shell {
+  overflow-x: auto;
+}
+
+.dashboard-table {
+  width: 100%;
+}
+
+.dashboard-table th {
+  color: var(--muted-color);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-table td {
+  color: var(--ink-strong);
+}

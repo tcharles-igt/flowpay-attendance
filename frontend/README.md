@@ -36,6 +36,12 @@ O frontend esta configurado para rodar na porta `4200`.
 
 Use Node.js `>=20.19.0` ou `>=22.12.0`, conforme exigido pela versao atual do Angular CLI configurada neste projeto.
 
+## Integracao local e Docker
+
+Em desenvolvimento, `npm start` usa proxy para `/api` apontando para `http://localhost:8080`.
+
+No ambiente Docker, o Nginx do frontend encaminha `/api` para o backend via `API_UPSTREAM`.
+
 ## Proximos passos
 
 - construir layout inicial do dashboard;

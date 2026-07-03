@@ -1,0 +1,36 @@
+.team-summary {
+  height: 100%;
+}
+
+.team-summary__grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.team-summary__item {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.team-summary__header,
+.team-summary__stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.team-summary__header strong {
+  color: var(--ink-strong);
+}
+
+.team-summary__header span,
+.team-summary__stats span {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}

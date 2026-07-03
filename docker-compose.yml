@@ -3,13 +3,49 @@ services:
     image: postgres:16
     container_name: flowpay-postgres
     environment:
-      POSTGRES_DB: flowpay_attendance
-      POSTGRES_USER: flowpay
-      POSTGRES_PASSWORD: flowpay
+      POSTGRES_DB: ${POSTGRES_DB:-flowpay_attendance}
+      POSTGRES_USER: ${POSTGRES_USER:-flowpay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-flowpay}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-flowpay} -d ${POSTGRES_DB:-flowpay_attendance}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
     volumes:
       - flowpay_postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: flowpay-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-flowpay_attendance}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-flowpay}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-flowpay}
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL:-false}
+      LOGGING_LEVEL_ORG_HIBERNATE_SQL: ${LOGGING_LEVEL_ORG_HIBERNATE_SQL:-WARN}
+      LOGGING_LEVEL_ORG_FLYWAYDB: ${LOGGING_LEVEL_ORG_FLYWAYDB:-INFO}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: flowpay-frontend
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      API_UPSTREAM: http://backend:8080
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
 
 volumes:
   flowpay_postgres_data:

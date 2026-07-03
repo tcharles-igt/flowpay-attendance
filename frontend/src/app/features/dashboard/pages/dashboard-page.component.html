@@ -1,0 +1,121 @@
+<mat-toolbar class="dashboard-toolbar">
+  <div class="dashboard-toolbar__brand">
+    <span class="dashboard-toolbar__eyebrow">FlowPay Attendance</span>
+    <strong>Dashboard operacional</strong>
+  </div>
+
+  <button mat-stroked-button type="button" (click)="refreshNow()" [disabled]="refreshing() || loading()">
+    Atualizar agora
+  </button>
+</mat-toolbar>
+
+@if (refreshing()) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}
+
+<main class="dashboard-page">
+  <section class="hero-grid">
+    <mat-card class="hero-card hero-card--intro">
+      <p class="section-heading__eyebrow">Monitoramento continuo</p>
+      <h1>Uma visao unica para fila, capacidade e resolucao.</h1>
+      <p class="hero-copy">
+        O painel consulta a API a cada 5 segundos para manter a operacao atualizada sem refresh manual.
+      </p>
+
+      <div class="hero-metadata">
+        <span>Polling automatico de 5s</span>
+        <span>
+          @if (lastUpdated()) {
+            Atualizado {{ lastUpdated() | date: 'dd/MM HH:mm:ss' }}
+          } @else {
+            Aguardando primeira carga
+          }
+        </span>
+      </div>
+    </mat-card>
+
+    <mat-card class="hero-card hero-card--form">
+      <div class="section-heading">
+        <div>
+          <p class="section-heading__eyebrow">Novo atendimento</p>
+          <h2>Abrir chamado rapido</h2>
+        </div>
+        <p class="section-heading__copy">Fluxo minimo para alimentar a fila sem sair do dashboard.</p>
+      </div>
+
+      <form class="attendance-form" [formGroup]="createAttendanceForm" (ngSubmit)="submitAttendance()">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome do cliente</mat-label>
+          <input matInput formControlName="customerName" placeholder="Ex.: Maria Souza">
+          @if (hasFieldError('customerName')) {
+            <mat-error>Informe um nome com pelo menos 3 caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Assunto</mat-label>
+          <mat-select formControlName="subject">
+            @for (option of subjectOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <button mat-flat-button type="submit" class="primary-button" [disabled]="submitting()">
+          @if (submitting()) {
+            Criando...
+          } @else {
+            Abrir atendimento
+          }
+        </button>
+      </form>
+    </mat-card>
+  </section>
+
+  @if (errorMessage()) {
+    <mat-card class="feedback-card feedback-card--error">
+      <strong>Falha na sincronizacao</strong>
+      <p>{{ errorMessage() }}</p>
+    </mat-card>
+  }
+
+  @if (loading()) {
+    <mat-card class="feedback-card feedback-card--loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <div>
+        <strong>Carregando operacao</strong>
+        <p>Buscando dados do dashboard e montando a visao inicial.</p>
+      </div>
+    </mat-card>
+  } @else if (dashboard(); as dashboard) {
+    <section class="metrics-grid">
+      @for (metric of metrics(); track metric.title) {
+        <app-metric-card
+          [title]="metric.title"
+          [value]="metric.value"
+          [description]="metric.description"
+          [tone]="metric.tone"
+        />
+      }
+    </section>
+
+    <section class="content-grid content-grid--top">
+      <app-team-summary [teams]="dashboard.teams"></app-team-summary>
+      <app-attendants-table [attendants]="dashboard.attendants"></app-attendants-table>
+    </section>
+
+    <section class="content-grid content-grid--bottom">
+      <app-queue-table [queue]="dashboard.queue"></app-queue-table>
+      <app-in-progress-table
+        [attendances]="dashboard.inProgressAttendances"
+        [finishingId]="finishingId()"
+        (finish)="finishAttendance($event)"
+      ></app-in-progress-table>
+    </section>
+  } @else {
+    <mat-card class="feedback-card">
+      <strong>Nenhum dado disponivel</strong>
+      <p>A API respondeu sem conteudo suficiente para montar o dashboard.</p>
+    </mat-card>
+  }
+</main>

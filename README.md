@@ -43,7 +43,7 @@ Autenticacao e controle de acesso nao fazem parte do escopo inicial, porque o fo
 - SCSS
 - npm
 
-### Infraestrutura prevista
+### Infraestrutura
 
 - PostgreSQL
 - Docker
@@ -133,27 +133,66 @@ startedAt
 finishedAt
 ```
 
-## Status atual do repositorio
+## Execucao com Docker
 
-No momento, a base inicial do projeto ja foi criada com dois aplicativos separados:
+O caminho principal de avaliacao e subir tudo com um unico comando:
 
-- `backend/`: bootstrap Spring Boot com estrutura Maven e teste inicial de contexto;
-- `frontend/`: bootstrap Angular com estrutura base da aplicacao;
-- `.gitignore` raiz: configurado para ignorar artefatos comuns de build, IDE e sistema operacional.
+```bash
+cp .env.example .env
+docker compose up --build
+```
 
-Os proximos passos da evolucao devem incluir modelagem de dominio, API REST, persistencia, dashboard e conteinerizacao.
+Servicos expostos:
 
-## Ordem recomendada de execucao
+- frontend: [http://localhost:4200](http://localhost:4200)
+- backend: [http://localhost:8080](http://localhost:8080)
+- swagger: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- PostgreSQL: `localhost:5432`
 
-Para evoluir ou validar a solucao localmente, a ordem recomendada e:
+O `docker-compose.yml` sobe:
 
-1. Preparar o backend Spring Boot.
-2. Preparar o frontend Angular.
-3. Configurar banco de dados PostgreSQL.
-4. Implementar a regra de distribuicao dos atendimentos.
-5. Expor endpoints da API.
-6. Construir o dashboard web.
-7. Consolidar Docker, dados iniciais e documentacao final.
+- `postgres` com volume persistente e `healthcheck`;
+- `backend` Spring Boot apontando para o banco containerizado;
+- `frontend` Angular servido por Nginx e integrado ao backend por proxy em `/api`.
+
+As migrations do Flyway rodam automaticamente no bootstrap do backend, entao o banco sobe pronto para uso.
+
+## Variaveis de ambiente
+
+Os valores padrao estao em [.env.example](/Users/tcharlesbarreto/Dev%20Repos/flowpay-attendance/.env.example).
+
+Variaveis principais:
+
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_PORT`
+- `BACKEND_PORT`
+- `FRONTEND_PORT`
+- `SPRING_JPA_SHOW_SQL`
+
+## Execucao local sem Docker
+
+1. Suba apenas o banco:
+
+```bash
+docker compose up -d postgres
+```
+
+2. Rode o backend:
+
+```bash
+cd backend
+./mvnw -Dmaven.repo.local=.m2 spring-boot:run
+```
+
+3. Rode o frontend:
+
+```bash
+cd frontend
+npm install
+npm start
+```
 
 ## Comandos uteis
 
@@ -161,8 +200,8 @@ Para evoluir ou validar a solucao localmente, a ordem recomendada e:
 
 ```bash
 cd backend
-./mvnw test
-./mvnw spring-boot:run
+./mvnw -Dmaven.repo.local=.m2 test
+./mvnw -Dmaven.repo.local=.m2 spring-boot:run
 ```
 
 ### Frontend
@@ -176,11 +215,12 @@ npm start
 ### Banco de dados
 
 ```bash
-docker compose up -d
-docker ps
+docker compose up --build
+docker compose logs -f
 ```
 
 ## Observacoes
 
 - O frontend foi gerado com Angular CLI e depende de uma versao de Node compativel com a configuracao do projeto.
-- As portas padrao ja foram reservadas para manter consistencia entre execucao local, Docker e futura documentacao operacional.
+- O backend usa PostgreSQL em execucao normal e H2 apenas nos testes.
+- Se quiser reproduzir o ambiente de avaliacao, prefira `docker compose up --build`.
