@@ -15,10 +15,13 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import io.github.tcharles_igt.flowpay_attendance.attendant.dto.AttendantRequest;
 import io.github.tcharles_igt.flowpay_attendance.attendant.dto.AttendantResponse;
 import io.github.tcharles_igt.flowpay_attendance.attendant.service.AttendantService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/attendants")
+@Tag(name = "Attendants", description = "Gestao basica de atendentes disponiveis para distribuicao.")
 public class AttendantController {
 
 	private final AttendantService attendantService;
@@ -28,6 +31,7 @@ public class AttendantController {
 	}
 
 	@PostMapping
+	@Operation(summary = "Criar atendente")
 	public ResponseEntity<AttendantResponse> create(@Valid @RequestBody AttendantRequest request) {
 		var response = attendantService.create(request);
 		URI location = ServletUriComponentsBuilder.fromCurrentRequest()
@@ -38,11 +42,13 @@ public class AttendantController {
 	}
 
 	@GetMapping
+	@Operation(summary = "Listar atendentes")
 	public List<AttendantResponse> findAll() {
 		return attendantService.findAll();
 	}
 
 	@GetMapping("/{id}")
+	@Operation(summary = "Buscar atendente por ID")
 	public AttendantResponse findById(@PathVariable Long id) {
 		return attendantService.findById(id);
 	}

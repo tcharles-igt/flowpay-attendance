@@ -3,6 +3,7 @@ package io.github.tcharles_igt.flowpay_attendance.attendance.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,7 +42,8 @@ class AttendanceDistributionServiceTest {
 
 	@BeforeEach
 	void setUp() {
-		when(attendanceRepository.save(any(Attendance.class))).thenAnswer(invocation -> invocation.getArgument(0));
+		lenient().when(attendanceRepository.save(any(Attendance.class)))
+			.thenAnswer(invocation -> invocation.getArgument(0));
 	}
 
 	@Test
