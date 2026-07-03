@@ -173,6 +173,13 @@ npm install
 npm start
 ```
 
+### Banco de dados
+
+```bash
+docker compose up -d
+docker ps
+```
+
 ## Observacoes
 
 - O frontend foi gerado com Angular CLI e depende de uma versao de Node compativel com a configuracao do projeto.

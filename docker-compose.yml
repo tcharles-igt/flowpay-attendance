@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: flowpay-postgres
+    environment:
+      POSTGRES_DB: flowpay_attendance
+      POSTGRES_USER: flowpay
+      POSTGRES_PASSWORD: flowpay
+    ports:
+      - "5432:5432"
+    volumes:
+      - flowpay_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  flowpay_postgres_data:
