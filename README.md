@@ -1,161 +1,78 @@
 # flowpay-attendance
 
-Sistema Full Stack desenvolvido para o desafio tecnico FlowPay. A proposta da solucao e distribuir atendimentos entre times especializados, controlar filas quando os atendentes atingem sua capacidade maxima e disponibilizar um dashboard para monitoramento operacional em tempo real.
+Solucao Full Stack para o desafio tecnico FlowPay. O sistema distribui atendimentos entre times especializados, respeita a capacidade maxima por atendente, coloca casos em fila quando necessario e expõe um dashboard operacional para acompanhamento em tempo real.
 
-## Objetivo
+## O que o avaliador consegue validar
 
-Construir uma aplicacao para:
+- criacao de novos atendimentos;
+- direcionamento automatico por assunto;
+- atribuicao imediata quando existe capacidade;
+- fila `WAITING` quando o time esta lotado;
+- redistribuicao automatica ao finalizar um atendimento;
+- dashboard com metricas, fila, atendentes e atendimentos em andamento.
 
-- criar novos atendimentos;
-- classificar automaticamente o assunto;
-- direcionar o atendimento para o time responsavel;
-- respeitar a capacidade maxima de atendimentos simultaneos por atendente;
-- manter fila de espera quando nao houver capacidade disponivel;
-- exibir um dashboard com visao operacional da central.
+## Pre-requisitos para execucao local
 
-## Escopo da solucao
-
-A entrega esta organizada para cobrir os principais blocos do desafio:
-
-- API REST para criacao, distribuicao, listagem e finalizacao de atendimentos;
-- dashboard web para acompanhamento operacional;
-- banco de dados para persistencia das informacoes;
-- dados iniciais para facilitar validacao local;
-- documentacao com instrucoes de execucao, regras implementadas e decisoes tecnicas.
-
-Autenticacao e controle de acesso nao fazem parte do escopo inicial, porque o foco da prova esta na regra de distribuicao, na API e no dashboard.
-
-## Stack utilizada
-
-### Backend
+Para rodar sem Docker:
 
 - Java 21
-- Spring Boot
-- Maven
-- JUnit
-- Mockito
+- Node.js `>=20.19.0` ou `>=22.12.0`
+- npm `>=10`
+- Docker e Docker Compose
 
-### Frontend
+O Docker continua sendo necessario mesmo no modo local se voce quiser subir apenas o PostgreSQL por container.
 
-- Angular
-- TypeScript
-- RxJS
-- SCSS
-- npm
+## Subida completa com Docker Compose
 
-### Infraestrutura
-
-- PostgreSQL
-- Docker
-- Docker Compose
-
-## Estrutura do repositorio
-
-```txt
-flowpay-attendance/
-├── backend/
-│   ├── src/
-│   ├── pom.xml
-│   └── mvnw
-├── frontend/
-│   ├── src/
-│   ├── package.json
-│   └── angular.json
-└── README.md
-```
-
-## Portas padrao
-
-- backend: `8080`
-- frontend: `4200`
-- PostgreSQL: `5432`
-
-## Regras de negocio
-
-### Times de atendimento
-
-- `CARDS`: atendimentos relacionados a problemas com cartao.
-- `LOANS`: atendimentos relacionados a solicitacoes de emprestimo.
-- `OTHERS`: demais assuntos.
-
-### Capacidade dos atendentes
-
-Cada atendente pode atender no maximo `3` clientes simultaneamente.
-
-Quando todos os atendentes de um time estiverem ocupados, novos atendimentos desse time devem permanecer em fila. Assim que um atendimento for finalizado, o proximo item da fila do mesmo time deve ser redistribuido automaticamente.
-
-## Fluxo funcional esperado
-
-### Criacao de atendimento
-
-```txt
-1. O sistema recebe uma nova solicitacao.
-2. O assunto do atendimento e identificado.
-3. O time responsavel e definido automaticamente.
-4. O sistema procura um atendente ativo com capacidade disponivel.
-5. Se houver disponibilidade, o atendimento e atribuido e passa para IN_PROGRESS.
-6. Se nao houver disponibilidade, o atendimento permanece em WAITING na fila do time.
-```
-
-### Finalizacao de atendimento
-
-```txt
-1. O atendimento em andamento e finalizado.
-2. A vaga do atendente e liberada.
-3. O sistema procura o proximo atendimento WAITING do mesmo time.
-4. Se existir item em fila, ele e atribuido automaticamente ao atendente liberado.
-```
-
-## Modelagem principal prevista
-
-### Attendant
-
-```txt
-id
-name
-team
-active
-createdAt
-updatedAt
-```
-
-### Attendance
-
-```txt
-id
-customerName
-subject
-team
-status
-attendant
-createdAt
-startedAt
-finishedAt
-```
-
-## Execucao com Docker
-
-O caminho principal de avaliacao e subir tudo com um unico comando:
+O fluxo principal de avaliacao e este:
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-Servicos expostos:
+A aplicacao fica disponivel em:
 
 - frontend: [http://localhost:4200](http://localhost:4200)
 - backend: [http://localhost:8080](http://localhost:8080)
 - swagger: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
-- PostgreSQL: `localhost:5432`
 
 O `docker-compose.yml` sobe:
 
-- `postgres` com volume persistente e `healthcheck`;
-- `backend` Spring Boot apontando para o banco containerizado;
-- `frontend` Angular servido por Nginx e integrado ao backend por proxy em `/api`.
+- `postgres`
+- `backend`
+- `frontend`
 
-As migrations do Flyway rodam automaticamente no bootstrap do backend, entao o banco sobe pronto para uso.
+As migrations do Flyway rodam automaticamente no bootstrap do backend, entao o banco sobe pronto para uso sem script manual adicional.
+
+## Execucao local por modulo
+
+### 1. Banco de dados
+
+```bash
+docker compose up -d postgres
+```
+
+### 2. Backend
+
+```bash
+cd backend
+./mvnw -Dmaven.repo.local=.m2 spring-boot:run
+```
+
+API disponivel em `http://localhost:8080`.
+
+### 3. Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+Dashboard disponivel em `http://localhost:4200`.
+
+Em desenvolvimento, o frontend usa proxy para `/api` apontando para `http://localhost:8080`.
 
 ## Variaveis de ambiente
 
@@ -171,56 +88,132 @@ Variaveis principais:
 - `FRONTEND_PORT`
 - `SPRING_JPA_SHOW_SQL`
 
-## Execucao local sem Docker
+## Endpoints principais
 
-1. Suba apenas o banco:
+### Atendimento
 
-```bash
-docker compose up -d postgres
+- `POST /api/attendances`
+  Cria um novo atendimento.
+
+Exemplo:
+
+```json
+{
+  "customerName": "Maria Souza",
+  "subject": "CARD_PROBLEM"
+}
 ```
 
-2. Rode o backend:
+- `GET /api/attendances`
+  Lista atendimentos por ordem de criacao.
 
-```bash
-cd backend
-./mvnw -Dmaven.repo.local=.m2 spring-boot:run
-```
+- `GET /api/attendances/{id}`
+  Busca um atendimento especifico.
 
-3. Rode o frontend:
+- `PATCH /api/attendances/{id}/finish`
+  Finaliza um atendimento em andamento e tenta redistribuir o proximo item elegivel da fila do mesmo time.
 
-```bash
-cd frontend
-npm install
-npm start
-```
+### Dashboard
 
-## Comandos uteis
+- `GET /api/dashboard`
+  Retorna metricas agregadas, resumo por time, atendentes, fila e atendimentos ativos.
+
+### Atendentes
+
+- `GET /api/attendants`
+  Lista atendentes cadastrados.
+
+## Regra de distribuicao implementada
+
+### Mapeamento de assunto para time
+
+- `CARD_PROBLEM` -> `CARDS`
+- `LOAN_REQUEST` -> `LOANS`
+- `OTHER` -> `OTHERS`
+
+### Regra de atribuicao
+
+1. O sistema identifica o time responsavel pelo assunto.
+2. Procura um atendente ativo desse time com menos de 3 atendimentos `IN_PROGRESS`.
+3. Se existir vaga, o atendimento entra como `IN_PROGRESS`.
+4. Se nao existir vaga, o atendimento entra como `WAITING`.
+
+### Regra de fila
+
+- cada time consome apenas sua propria fila;
+- uma finalizacao libera capacidade apenas para o mesmo time;
+- o proximo item redistribuido e o `WAITING` mais antigo daquele time.
+
+## Dados iniciais disponiveis
+
+Ao subir a aplicacao, o banco recebe atendentes iniciais via migration. Eles existem para permitir validacao imediata da regra sem cadastro manual.
+
+Times com atendentes seeded:
+
+- `CARDS`
+- `LOANS`
+- `OTHERS`
+
+Isso permite testar de imediato:
+
+- criacao de atendimento com distribuicao direta;
+- saturacao de capacidade;
+- comportamento de fila;
+- redistribuicao apos finalizacao.
+
+## Decisoes tecnicas
+
+- Backend e frontend separados.
+  Facilita evolucao independente, isolamento de responsabilidades e avaliacao tecnica de cada camada.
+
+- Regra centralizada no backend.
+  A distribuicao, fila e redistribuicao ficam em um unico ponto confiavel, sem depender do frontend.
+
+- Dashboard com polling.
+  O frontend consulta a API periodicamente para manter a operacao atualizada sem complexidade extra de WebSocket.
+
+- PostgreSQL com Flyway.
+  Garante ambiente reproduzivel, schema versionado e subida automatica do banco.
+
+- Docker Compose como caminho principal.
+  Reduz atrito para avaliacao e deixa a execucao completa reproduzivel com um unico comando.
+
+## Como validar o fluxo principal
+
+1. Suba tudo com `docker compose up --build`.
+2. Abra o dashboard em [http://localhost:4200](http://localhost:4200).
+3. Crie novos atendimentos pelo formulario da tela.
+4. Observe o atendimento entrar em `IN_PROGRESS` quando houver vaga.
+5. Gere volume suficiente para lotar um time e veja novos casos entrarem em `WAITING`.
+6. Finalize um atendimento em andamento e confirme a redistribuicao automatica do item mais antigo da fila do mesmo time.
+
+## Testes uteis
 
 ### Backend
 
 ```bash
 cd backend
 ./mvnw -Dmaven.repo.local=.m2 test
-./mvnw -Dmaven.repo.local=.m2 spring-boot:run
 ```
 
 ### Frontend
 
 ```bash
 cd frontend
-npm install
-npm start
+npm test
 ```
 
-### Banco de dados
+## Limites da entrega
 
-```bash
-docker compose up --build
-docker compose logs -f
-```
+- nao existe autenticacao nem controle de acesso;
+- o dashboard usa polling em vez de atualizacao em tempo real via push;
+- nao ha observabilidade avancada, tracing ou metricas de producao;
+- a estrategia de distribuicao atual prioriza capacidade disponivel e ordem de fila, sem heuristicas adicionais.
 
-## Observacoes
+## Evolucoes futuras
 
-- O frontend foi gerado com Angular CLI e depende de uma versao de Node compativel com a configuracao do projeto.
-- O backend usa PostgreSQL em execucao normal e H2 apenas nos testes.
-- Se quiser reproduzir o ambiente de avaliacao, prefira `docker compose up --build`.
+- autenticacao e perfis operacionais;
+- WebSocket ou SSE para atualizacao em tempo real;
+- filtros e ordenacao avancada no dashboard;
+- testes E2E cobrindo o fluxo completo via interface;
+- observabilidade e healthchecks mais ricos no backend.
