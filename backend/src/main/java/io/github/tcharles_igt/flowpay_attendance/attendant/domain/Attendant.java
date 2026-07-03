@@ -1,5 +1,9 @@
 package io.github.tcharles_igt.flowpay_attendance.attendant.domain;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import io.github.tcharles_igt.flowpay_attendance.attendance.domain.Attendance;
 import io.github.tcharles_igt.flowpay_attendance.shared.domain.BaseEntity;
 import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
 import jakarta.persistence.Column;
@@ -9,6 +13,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -28,6 +33,9 @@ public class Attendant extends BaseEntity {
 
 	@Column(nullable = false)
 	private boolean active = true;
+
+	@OneToMany(mappedBy = "attendant")
+	private List<Attendance> attendances = new ArrayList<>();
 
 	public Long getId() {
 		return id;
@@ -55,5 +63,9 @@ public class Attendant extends BaseEntity {
 
 	public void setActive(boolean active) {
 		this.active = active;
+	}
+
+	public List<Attendance> getAttendances() {
+		return attendances;
 	}
 }
