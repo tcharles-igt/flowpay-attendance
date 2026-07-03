@@ -1,1 +1,26 @@
-<router-outlet></router-outlet>
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <div class="app-sidebar__brand">
+      <span class="app-sidebar__eyebrow">FlowPay Attendance</span>
+      <strong>Central operacional</strong>
+    </div>
+
+    <nav class="app-sidebar__nav" aria-label="Navegacao principal">
+      @for (item of navigationItems; track item.route) {
+        <a
+          class="app-sidebar__link"
+          [routerLink]="item.route"
+          routerLinkActive="app-sidebar__link--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <span>{{ item.label }}</span>
+          <small>{{ item.description }}</small>
+        </a>
+      }
+    </nav>
+  </aside>
+
+  <main class="app-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

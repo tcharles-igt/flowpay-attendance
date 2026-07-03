@@ -60,6 +60,18 @@ export interface CreateAttendanceRequest {
   subject: AttendanceSubject;
 }
 
+export interface AttendanceResponse {
+  id: number;
+  customerName: string;
+  subject: AttendanceSubject;
+  team: TeamType;
+  status: AttendanceStatus;
+  attendantId: number | null;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
+}
+
 export interface ApiErrorResponse {
   message?: string;
   details?: string[];

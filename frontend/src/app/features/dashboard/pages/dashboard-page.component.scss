@@ -1,18 +1,12 @@
 :host {
   display: block;
-  min-height: 100dvh;
   background: #edf3ff;
 }
 
 .dashboard-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
   min-height: 56px;
-  padding: var(--space-8) 0;
-  background: rgba(248, 251, 255, 0.78);
-  backdrop-filter: blur(18px);
-  border-bottom: 1px solid var(--line-soft);
+  padding: 2rem 0 0;
+  background: transparent;
 }
 
 .dashboard-toolbar__inner {

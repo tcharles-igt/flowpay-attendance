@@ -88,15 +88,6 @@
       <app-attendants-table [attendants]="dashboard.attendants"></app-attendants-table>
     </section>
 
-    <section class="content-grid content-grid--bottom">
-      <app-queue-table [queue]="dashboard.queue" [referenceTime]="lastUpdated()"></app-queue-table>
-      <app-in-progress-table
-        [attendances]="dashboard.inProgressAttendances"
-        [finishingId]="finishingId()"
-        [referenceTime]="lastUpdated()"
-        (finish)="finishAttendance($event)"
-      ></app-in-progress-table>
-    </section>
   } @else {
     <mat-card class="feedback-card">
       <strong>Nenhum dado disponivel</strong>
