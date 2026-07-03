@@ -99,7 +99,10 @@ class ApiIntegrationTest {
 			.andExpect(jsonPath("$.waiting").value(1))
 			.andExpect(jsonPath("$.inProgress").value(1))
 			.andExpect(jsonPath("$.teams[?(@.team=='CARDS')].inProgress").value(org.hamcrest.Matchers.contains(1)))
-			.andExpect(jsonPath("$.queue[0].customerName").value("Na fila"));
+			.andExpect(jsonPath("$.queue[0].customerName").value("Na fila"))
+			.andExpect(jsonPath("$.inProgressAttendances[0].customerName").value("Em andamento"))
+			.andExpect(jsonPath("$.inProgressAttendances[0].attendantName").value("Joao"))
+			.andExpect(jsonPath("$.inProgressAttendances[0].startedAt").isNotEmpty());
 	}
 
 	@Test

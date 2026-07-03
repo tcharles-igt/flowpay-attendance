@@ -22,4 +22,6 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
 	List<Attendance> findAllByOrderByCreatedAtAsc();
 
 	List<Attendance> findAllByStatusOrderByCreatedAtAsc(AttendanceStatus status);
+
+	List<Attendance> findAllByStatusOrderByStartedAtAsc(AttendanceStatus status);
 }

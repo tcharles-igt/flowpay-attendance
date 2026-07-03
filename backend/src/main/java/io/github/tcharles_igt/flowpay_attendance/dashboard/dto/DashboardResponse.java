@@ -9,6 +9,7 @@ public record DashboardResponse(
 	long finished,
 	List<DashboardTeamSummaryResponse> teams,
 	List<DashboardAttendantResponse> attendants,
-	List<DashboardQueueItemResponse> queue
+	List<DashboardQueueItemResponse> queue,
+	List<DashboardInProgressAttendanceResponse> inProgressAttendances
 ) {
 }

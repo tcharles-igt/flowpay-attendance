@@ -9,6 +9,7 @@ import io.github.tcharles_igt.flowpay_attendance.attendance.domain.AttendanceSta
 import io.github.tcharles_igt.flowpay_attendance.attendance.repository.AttendanceRepository;
 import io.github.tcharles_igt.flowpay_attendance.attendant.repository.AttendantRepository;
 import io.github.tcharles_igt.flowpay_attendance.dashboard.dto.DashboardAttendantResponse;
+import io.github.tcharles_igt.flowpay_attendance.dashboard.dto.DashboardInProgressAttendanceResponse;
 import io.github.tcharles_igt.flowpay_attendance.dashboard.dto.DashboardQueueItemResponse;
 import io.github.tcharles_igt.flowpay_attendance.dashboard.dto.DashboardResponse;
 import io.github.tcharles_igt.flowpay_attendance.dashboard.dto.DashboardTeamSummaryResponse;
@@ -73,7 +74,21 @@ public class DashboardService {
 			))
 			.toList();
 
+		var inProgressAttendances = attendanceRepository.findAllByStatusOrderByStartedAtAsc(AttendanceStatus.IN_PROGRESS)
+			.stream()
+			.map(attendance -> new DashboardInProgressAttendanceResponse(
+				attendance.getId(),
+				attendance.getCustomerName(),
+				attendance.getSubject(),
+				attendance.getTeam(),
+				attendance.getStatus(),
+				attendance.getAttendant() != null ? attendance.getAttendant().getId() : null,
+				attendance.getAttendant() != null ? attendance.getAttendant().getName() : null,
+				attendance.getStartedAt()
+			))
+			.toList();
+
 		return new DashboardResponse(waiting + inProgress + finished, waiting, inProgress, finished, teams, attendants,
-			queue);
+			queue, inProgressAttendances);
 	}
 }
