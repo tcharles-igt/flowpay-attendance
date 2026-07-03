@@ -4,12 +4,15 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import io.github.tcharles_igt.flowpay_attendance.attendance.domain.Attendance;
 import io.github.tcharles_igt.flowpay_attendance.attendance.domain.AttendanceStatus;
 import io.github.tcharles_igt.flowpay_attendance.attendance.dto.AttendanceRequest;
 import io.github.tcharles_igt.flowpay_attendance.attendance.dto.AttendanceResponse;
 import io.github.tcharles_igt.flowpay_attendance.attendance.repository.AttendanceRepository;
+import io.github.tcharles_igt.flowpay_attendance.dashboard.service.DashboardStreamService;
 import io.github.tcharles_igt.flowpay_attendance.shared.exception.BusinessException;
 import io.github.tcharles_igt.flowpay_attendance.shared.exception.ResourceNotFoundException;
 
@@ -20,12 +23,16 @@ public class AttendanceService {
 
 	private final AttendanceDistributionService attendanceDistributionService;
 
+	private final DashboardStreamService dashboardStreamService;
+
 	public AttendanceService(
 		AttendanceRepository attendanceRepository,
-		AttendanceDistributionService attendanceDistributionService
+		AttendanceDistributionService attendanceDistributionService,
+		DashboardStreamService dashboardStreamService
 	) {
 		this.attendanceRepository = attendanceRepository;
 		this.attendanceDistributionService = attendanceDistributionService;
+		this.dashboardStreamService = dashboardStreamService;
 	}
 
 	@Transactional
@@ -33,8 +40,9 @@ public class AttendanceService {
 		var attendance = new Attendance();
 		attendance.setCustomerName(request.customerName());
 		attendance.setSubject(request.subject());
-
-		return toResponse(attendanceDistributionService.distributeNewAttendance(attendance));
+		var response = toResponse(attendanceDistributionService.distributeNewAttendance(attendance));
+		publishDashboardUpdateAfterCommit();
+		return response;
 	}
 
 	@Transactional
@@ -44,8 +52,9 @@ public class AttendanceService {
 		if (attendance.getStatus() != AttendanceStatus.IN_PROGRESS) {
 			throw new BusinessException("Only in-progress attendances can be finished");
 		}
-
-		return toResponse(attendanceDistributionService.finishAttendance(attendance));
+		var response = toResponse(attendanceDistributionService.finishAttendance(attendance));
+		publishDashboardUpdateAfterCommit();
+		return response;
 	}
 
 	@Transactional(readOnly = true)
@@ -75,5 +84,19 @@ public class AttendanceService {
 			attendance.getStartedAt(),
 			attendance.getFinishedAt()
 		);
+	}
+
+	private void publishDashboardUpdateAfterCommit() {
+		if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+			dashboardStreamService.publishDashboardUpdate();
+			return;
+		}
+
+		TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+			@Override
+			public void afterCommit() {
+				dashboardStreamService.publishDashboardUpdate();
+			}
+		});
 	}
 }

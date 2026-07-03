@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
@@ -144,6 +145,13 @@ class ApiIntegrationTest {
 			.andExpect(jsonPath("$.inProgressAttendances[0].customerName").value("Em andamento"))
 			.andExpect(jsonPath("$.inProgressAttendances[0].attendantName").value("Joao"))
 			.andExpect(jsonPath("$.inProgressAttendances[0].startedAt").isNotEmpty());
+	}
+
+	@Test
+	void shouldOpenDashboardEventStream() throws Exception {
+		mockMvc.perform(get("/api/dashboard/events"))
+			.andExpect(request().asyncStarted())
+			.andExpect(header().string("Content-Type", org.hamcrest.Matchers.containsString("text/event-stream")));
 	}
 
 	@Test
