@@ -28,6 +28,9 @@ public class Attendance extends BaseEntity {
 	@Column(name = "customer_name", nullable = false, length = 150)
 	private String customerName;
 
+	@Column(nullable = false, length = 500)
+	private String message;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 30)
 	private AttendanceSubject subject;
@@ -60,6 +63,14 @@ public class Attendance extends BaseEntity {
 
 	public void setCustomerName(String customerName) {
 		this.customerName = customerName;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
 	}
 
 	public AttendanceSubject getSubject() {

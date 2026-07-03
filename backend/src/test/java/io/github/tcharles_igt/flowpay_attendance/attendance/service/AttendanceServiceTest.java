@@ -38,12 +38,13 @@ class AttendanceServiceTest {
 
 	@Test
 	void shouldMapCardProblemToCardsAndStartAttendanceWhenCapacityExists() {
-		var response = attendanceService.create(new AttendanceRequest("Cliente Cartao", AttendanceSubject.CARD_PROBLEM));
+		var response = attendanceService.create(new AttendanceRequest("Cliente Cartao", "Cartao bloqueado", AttendanceSubject.CARD_PROBLEM));
 
 		assertThat(response.team()).isEqualTo(TeamType.CARDS);
 		assertThat(response.status()).isEqualTo(AttendanceStatus.IN_PROGRESS);
 		assertThat(response.attendantId()).isNotNull();
 		assertThat(response.startedAt()).isNotNull();
+		assertThat(response.message()).isEqualTo("Cartao bloqueado");
 	}
 
 	@Test
@@ -55,7 +56,7 @@ class AttendanceServiceTest {
 		carla.setActive(false);
 		attendantRepository.save(carla);
 
-		var response = attendanceService.create(new AttendanceRequest("Cliente Sem Capacidade", AttendanceSubject.CARD_PROBLEM));
+		var response = attendanceService.create(new AttendanceRequest("Cliente Sem Capacidade", "Preciso de ajuda com o cartao", AttendanceSubject.CARD_PROBLEM));
 
 		assertThat(response.team()).isEqualTo(TeamType.CARDS);
 		assertThat(response.status()).isEqualTo(AttendanceStatus.WAITING);
@@ -68,7 +69,7 @@ class AttendanceServiceTest {
 		fillCapacity(findAttendantByName("Joao"));
 		fillCapacity(findAttendantByName("Carla"));
 
-		var response = attendanceService.create(new AttendanceRequest("Cliente Fila", AttendanceSubject.CARD_PROBLEM));
+		var response = attendanceService.create(new AttendanceRequest("Cliente Fila", "Nao consegui concluir a compra", AttendanceSubject.CARD_PROBLEM));
 
 		assertThat(response.team()).isEqualTo(TeamType.CARDS);
 		assertThat(response.status()).isEqualTo(AttendanceStatus.WAITING);
@@ -83,10 +84,22 @@ class AttendanceServiceTest {
 		fillCapacity(joao);
 		createInProgressAttendance(carla, "Cliente Carla 1");
 
-		var response = attendanceService.create(new AttendanceRequest("Cliente Distribuido", AttendanceSubject.CARD_PROBLEM));
+		var response = attendanceService.create(new AttendanceRequest("Cliente Distribuido", "Quero revisar uma transacao", AttendanceSubject.CARD_PROBLEM));
 
 		assertThat(response.attendantId()).isEqualTo(carla.getId());
 		assertThat(response.status()).isEqualTo(AttendanceStatus.IN_PROGRESS);
+	}
+
+	@Test
+	void shouldTrimAndPersistAttendanceMessage() {
+		var response = attendanceService.create(new AttendanceRequest("  Cliente Mensagem  ", "  Mensagem com espacos  ", AttendanceSubject.OTHER));
+
+		var persisted = attendanceRepository.findById(response.id()).orElseThrow();
+
+		assertThat(response.customerName()).isEqualTo("Cliente Mensagem");
+		assertThat(response.message()).isEqualTo("Mensagem com espacos");
+		assertThat(persisted.getCustomerName()).isEqualTo("Cliente Mensagem");
+		assertThat(persisted.getMessage()).isEqualTo("Mensagem com espacos");
 	}
 
 	@Test
@@ -132,6 +145,7 @@ class AttendanceServiceTest {
 	private Attendance createInProgressAttendance(Attendant attendant, String customerName) {
 		var attendance = new Attendance();
 		attendance.setCustomerName(customerName);
+		attendance.setMessage("Mensagem de " + customerName);
 		attendance.setSubject(resolveSubject(attendant.getTeam()));
 		attendance.setTeam(attendant.getTeam());
 		attendance.setStatus(AttendanceStatus.IN_PROGRESS);
@@ -148,6 +162,7 @@ class AttendanceServiceTest {
 	) {
 		var attendance = new Attendance();
 		attendance.setCustomerName(customerName);
+		attendance.setMessage("Mensagem de " + customerName);
 		attendance.setSubject(subject);
 		attendance.setTeam(team);
 		attendance.setStatus(AttendanceStatus.WAITING);

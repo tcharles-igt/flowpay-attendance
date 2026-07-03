@@ -75,6 +75,7 @@ class AttendantRepositoryTest {
 	private void createInProgressAttendance(Attendant attendant, String customerName) {
 		var attendance = new Attendance();
 		attendance.setCustomerName(customerName);
+		attendance.setMessage("Mensagem de " + customerName);
 		attendance.setSubject(AttendanceSubject.CARD_PROBLEM);
 		attendance.setTeam(attendant.getTeam());
 		attendance.setStatus(AttendanceStatus.IN_PROGRESS);

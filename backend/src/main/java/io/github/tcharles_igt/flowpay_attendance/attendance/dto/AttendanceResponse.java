@@ -13,6 +13,8 @@ public record AttendanceResponse(
 	Long id,
 	@Schema(example = "Maria Souza")
 	String customerName,
+	@Schema(example = "Meu cartao foi bloqueado apos uma compra internacional.")
+	String message,
 	@Schema(example = "CARD_PROBLEM")
 	AttendanceSubject subject,
 	@Schema(example = "CARDS")

@@ -110,6 +110,7 @@ class AttendanceDistributionServiceTest {
 		var releasedAttendant = attendant(20L, "Carla", TeamType.CARDS);
 		var inProgress = new Attendance();
 		inProgress.setTeam(TeamType.CARDS);
+		inProgress.setMessage("Mensagem em atendimento");
 		inProgress.setStatus(AttendanceStatus.IN_PROGRESS);
 		inProgress.setAttendant(releasedAttendant);
 		inProgress.setStartedAt(OffsetDateTime.now().minusMinutes(8));
@@ -139,6 +140,7 @@ class AttendanceDistributionServiceTest {
 		var releasedAttendant = attendant(30L, "Julia", TeamType.CARDS);
 		var inProgress = new Attendance();
 		inProgress.setTeam(TeamType.CARDS);
+		inProgress.setMessage("Mensagem em atendimento");
 		inProgress.setStatus(AttendanceStatus.IN_PROGRESS);
 		inProgress.setAttendant(releasedAttendant);
 
@@ -160,6 +162,7 @@ class AttendanceDistributionServiceTest {
 		var releasedAttendant = attendant(40L, "Rafa", TeamType.LOANS);
 		var inProgress = new Attendance();
 		inProgress.setTeam(TeamType.LOANS);
+		inProgress.setMessage("Mensagem em atendimento");
 		inProgress.setStatus(AttendanceStatus.IN_PROGRESS);
 		inProgress.setAttendant(releasedAttendant);
 
@@ -175,6 +178,7 @@ class AttendanceDistributionServiceTest {
 	private Attendance newAttendance(String customerName, AttendanceSubject subject) {
 		var attendance = new Attendance();
 		attendance.setCustomerName(customerName);
+		attendance.setMessage("Mensagem de " + customerName);
 		attendance.setSubject(subject);
 		return attendance;
 	}

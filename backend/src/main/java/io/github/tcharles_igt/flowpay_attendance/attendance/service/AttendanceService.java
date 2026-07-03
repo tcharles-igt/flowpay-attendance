@@ -39,6 +39,7 @@ public class AttendanceService {
 	public AttendanceResponse create(AttendanceRequest request) {
 		var attendance = new Attendance();
 		attendance.setCustomerName(request.customerName());
+		attendance.setMessage(request.message());
 		attendance.setSubject(request.subject());
 		var response = toResponse(attendanceDistributionService.distributeNewAttendance(attendance));
 		publishDashboardUpdateAfterCommit();
@@ -76,6 +77,7 @@ public class AttendanceService {
 		return new AttendanceResponse(
 			attendance.getId(),
 			attendance.getCustomerName(),
+			attendance.getMessage(),
 			attendance.getSubject(),
 			attendance.getTeam(),
 			attendance.getStatus(),

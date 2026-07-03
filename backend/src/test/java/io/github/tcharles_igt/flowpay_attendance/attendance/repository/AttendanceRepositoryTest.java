@@ -85,6 +85,7 @@ class AttendanceRepositoryTest {
 	) {
 		var attendance = new Attendance();
 		attendance.setCustomerName(customerName);
+		attendance.setMessage("Mensagem de " + customerName);
 		attendance.setSubject(AttendanceSubject.OTHER);
 		attendance.setTeam(team);
 		attendance.setStatus(status);

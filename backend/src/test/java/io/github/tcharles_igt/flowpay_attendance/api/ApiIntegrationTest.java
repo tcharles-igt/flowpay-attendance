@@ -67,6 +67,7 @@ class ApiIntegrationTest {
 				.content("""
 					{
 					  "customerName": "Cliente API",
+					  "message": "Cartao bloqueado apos compra online",
 					  "subject": "CARD_PROBLEM"
 					}
 					"""))
@@ -80,7 +81,8 @@ class ApiIntegrationTest {
 		mockMvc.perform(get("/api/attendances/{id}", attendanceId))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(attendanceId))
-			.andExpect(jsonPath("$.customerName").value("Cliente API"));
+			.andExpect(jsonPath("$.customerName").value("Cliente API"))
+			.andExpect(jsonPath("$.message").value("Cartao bloqueado apos compra online"));
 
 		mockMvc.perform(patch("/api/attendances/{id}/finish", attendanceId))
 			.andExpect(status().isOk())
@@ -95,12 +97,14 @@ class ApiIntegrationTest {
 				.content("""
 					{
 					  "customerName": "Cliente Contrato",
+					  "message": "Preciso de orientacao sobre outro assunto",
 					  "subject": "OTHER"
 					}
 					"""))
 			.andExpect(status().isCreated())
 			.andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/attendances/")))
 			.andExpect(jsonPath("$.customerName").value("Cliente Contrato"))
+			.andExpect(jsonPath("$.message").value("Preciso de orientacao sobre outro assunto"))
 			.andExpect(jsonPath("$.subject").value("OTHER"))
 			.andExpect(jsonPath("$.team").value("OTHERS"))
 			.andExpect(jsonPath("$.status").exists())
@@ -115,7 +119,8 @@ class ApiIntegrationTest {
 			AttendanceStatus.IN_PROGRESS,
 			AttendanceSubject.CARD_PROBLEM,
 			TeamType.CARDS,
-			joao
+			joao,
+			"Mensagem para finalizar"
 		);
 
 		mockMvc.perform(patch("/api/attendances/{id}/finish", inProgress.getId()))
@@ -123,14 +128,15 @@ class ApiIntegrationTest {
 			.andExpect(jsonPath("$.id").value(inProgress.getId()))
 			.andExpect(jsonPath("$.status").value("FINISHED"))
 			.andExpect(jsonPath("$.attendantId").value(joao.getId()))
+			.andExpect(jsonPath("$.message").value("Mensagem para finalizar"))
 			.andExpect(jsonPath("$.finishedAt").isNotEmpty());
 	}
 
 	@Test
 	void shouldReturnDashboardSummary() throws Exception {
 		var joao = findAttendantByName("Joao");
-		createAttendance("Em andamento", AttendanceStatus.IN_PROGRESS, AttendanceSubject.CARD_PROBLEM, TeamType.CARDS, joao);
-		createAttendance("Na fila", AttendanceStatus.WAITING, AttendanceSubject.LOAN_REQUEST, TeamType.LOANS, null);
+		createAttendance("Em andamento", AttendanceStatus.IN_PROGRESS, AttendanceSubject.CARD_PROBLEM, TeamType.CARDS, joao, "Cliente aguardando cartao");
+		createAttendance("Na fila", AttendanceStatus.WAITING, AttendanceSubject.LOAN_REQUEST, TeamType.LOANS, null, "Cliente aguardando emprestimo");
 
 		mockMvc.perform(get("/api/dashboard"))
 			.andExpect(status().isOk())
@@ -161,6 +167,7 @@ class ApiIntegrationTest {
 				.content("""
 					{
 					  "customerName": "",
+					  "message": "   ",
 					  "subject": null
 					}
 					"""))
@@ -178,7 +185,7 @@ class ApiIntegrationTest {
 
 	@Test
 	void shouldReturnBusinessErrorWhenFinishingNonInProgressAttendance() throws Exception {
-		var waiting = createAttendance("Ainda na fila", AttendanceStatus.WAITING, AttendanceSubject.OTHER, TeamType.OTHERS, null);
+		var waiting = createAttendance("Ainda na fila", AttendanceStatus.WAITING, AttendanceSubject.OTHER, TeamType.OTHERS, null, "Mensagem de fila");
 
 		mockMvc.perform(patch("/api/attendances/{id}/finish", waiting.getId()))
 			.andExpect(status().isUnprocessableEntity())
@@ -197,10 +204,12 @@ class ApiIntegrationTest {
 		AttendanceStatus status,
 		AttendanceSubject subject,
 		TeamType team,
-		Attendant attendant
+		Attendant attendant,
+		String message
 	) {
 		var attendance = new Attendance();
 		attendance.setCustomerName(customerName);
+		attendance.setMessage(message);
 		attendance.setStatus(status);
 		attendance.setSubject(subject);
 		attendance.setTeam(team);

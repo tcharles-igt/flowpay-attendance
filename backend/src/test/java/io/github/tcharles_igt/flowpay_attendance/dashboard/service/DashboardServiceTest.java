@@ -126,6 +126,7 @@ class DashboardServiceTest {
 	) {
 		var attendance = new Attendance();
 		attendance.setCustomerName(customerName);
+		attendance.setMessage("Mensagem de " + customerName);
 		attendance.setStatus(status);
 		attendance.setSubject(subject);
 		attendance.setTeam(team);

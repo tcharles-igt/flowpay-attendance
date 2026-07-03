@@ -43,6 +43,7 @@ class AttendanceServiceSseTest {
 	void shouldPublishDashboardUpdateOnlyAfterCreateCommit() {
 		var attendance = new Attendance();
 		attendance.setCustomerName("Cliente SSE");
+		attendance.setMessage("Mensagem SSE");
 		attendance.setSubject(AttendanceSubject.CARD_PROBLEM);
 		attendance.setTeam(TeamType.CARDS);
 		attendance.setStatus(AttendanceStatus.IN_PROGRESS);
@@ -53,7 +54,7 @@ class AttendanceServiceSseTest {
 
 		TransactionSynchronizationManager.initSynchronization();
 		try {
-			attendanceService.create(new AttendanceRequest("Cliente SSE", AttendanceSubject.CARD_PROBLEM));
+			attendanceService.create(new AttendanceRequest("Cliente SSE", "Mensagem SSE", AttendanceSubject.CARD_PROBLEM));
 
 			verify(dashboardStreamService, never()).publishDashboardUpdate();
 
@@ -71,6 +72,7 @@ class AttendanceServiceSseTest {
 		var attendance = new Attendance();
 		setId(attendance, 10L);
 		attendance.setCustomerName("Cliente Finalizado");
+		attendance.setMessage("Mensagem Finalizado");
 		attendance.setSubject(AttendanceSubject.CARD_PROBLEM);
 		attendance.setTeam(TeamType.CARDS);
 		attendance.setStatus(AttendanceStatus.IN_PROGRESS);
