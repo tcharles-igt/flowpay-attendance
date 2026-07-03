@@ -12,6 +12,8 @@ import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
 
 public interface AttendantRepository extends JpaRepository<Attendant, Long> {
 
+	List<Attendant> findAllByOrderByNameAsc();
+
 	List<Attendant> findAllByActiveTrueOrderByNameAsc();
 
 	List<Attendant> findAllByTeamAndActiveTrueOrderByNameAsc(TeamType team);

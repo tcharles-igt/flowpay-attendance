@@ -1,12 +1,16 @@
 package io.github.tcharles_igt.flowpay_attendance.attendance.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import io.github.tcharles_igt.flowpay_attendance.attendance.domain.Attendance;
+import io.github.tcharles_igt.flowpay_attendance.attendance.domain.AttendanceStatus;
 import io.github.tcharles_igt.flowpay_attendance.attendance.dto.AttendanceRequest;
 import io.github.tcharles_igt.flowpay_attendance.attendance.dto.AttendanceResponse;
 import io.github.tcharles_igt.flowpay_attendance.attendance.repository.AttendanceRepository;
+import io.github.tcharles_igt.flowpay_attendance.shared.exception.BusinessException;
 import io.github.tcharles_igt.flowpay_attendance.shared.exception.ResourceNotFoundException;
 
 @Service
@@ -37,8 +41,26 @@ public class AttendanceService {
 	public AttendanceResponse finish(Long attendanceId) {
 		var attendance = attendanceRepository.findById(attendanceId)
 			.orElseThrow(() -> new ResourceNotFoundException("Attendance not found: " + attendanceId));
+		if (attendance.getStatus() != AttendanceStatus.IN_PROGRESS) {
+			throw new BusinessException("Only in-progress attendances can be finished");
+		}
 
 		return toResponse(attendanceDistributionService.finishAttendance(attendance));
+	}
+
+	@Transactional(readOnly = true)
+	public List<AttendanceResponse> findAll() {
+		return attendanceRepository.findAllByOrderByCreatedAtAsc()
+			.stream()
+			.map(this::toResponse)
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public AttendanceResponse findById(Long attendanceId) {
+		return attendanceRepository.findById(attendanceId)
+			.map(this::toResponse)
+			.orElseThrow(() -> new ResourceNotFoundException("Attendance not found: " + attendanceId));
 	}
 
 	private AttendanceResponse toResponse(Attendance attendance) {
