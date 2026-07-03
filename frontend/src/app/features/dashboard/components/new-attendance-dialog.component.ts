@@ -27,8 +27,10 @@ export class NewAttendanceDialogComponent {
   private readonly dialogRef = inject(MatDialogRef<NewAttendanceDialogComponent, CreateAttendanceRequest | undefined>);
 
   protected readonly subjectOptions = attendanceSubjectOptions;
+  protected readonly maxMessageLength = 500;
   protected readonly form = this.formBuilder.nonNullable.group({
     customerName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
+    message: ['', [Validators.required, Validators.maxLength(this.maxMessageLength)]],
     subject: ['CARD_PROBLEM' as AttendanceSubject, Validators.required]
   });
 
@@ -44,11 +46,12 @@ export class NewAttendanceDialogComponent {
 
     this.dialogRef.close({
       customerName: this.form.controls.customerName.value.trim(),
+      message: this.form.controls.message.value.trim(),
       subject: this.form.controls.subject.value
     });
   }
 
-  protected hasFieldError(fieldName: 'customerName'): boolean {
+  protected hasFieldError(fieldName: 'customerName' | 'message'): boolean {
     const control = this.form.controls[fieldName];
     return control.invalid && (control.touched || control.dirty);
   }

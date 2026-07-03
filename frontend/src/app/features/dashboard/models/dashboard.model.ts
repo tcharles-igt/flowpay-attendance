@@ -57,12 +57,14 @@ export type DashboardStatusFilter = AttendanceStatus | 'ALL';
 
 export interface CreateAttendanceRequest {
   customerName: string;
+  message: string;
   subject: AttendanceSubject;
 }
 
 export interface AttendanceResponse {
   id: number;
   customerName: string;
+  message: string;
   subject: AttendanceSubject;
   team: TeamType;
   status: AttendanceStatus;

@@ -104,6 +104,7 @@ Exemplo:
 ```json
 {
   "customerName": "Maria Souza",
+  "message": "Meu cartao foi bloqueado apos uma compra internacional.",
   "subject": "CARD_PROBLEM"
 }
 ```

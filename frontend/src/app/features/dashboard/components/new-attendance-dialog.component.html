@@ -12,6 +12,22 @@
       }
     </mat-form-field>
 
+    <label class="field-label" for="attendance-message">Mensagem</label>
+    <mat-form-field appearance="outline">
+      <textarea
+        id="attendance-message"
+        matInput
+        formControlName="message"
+        rows="4"
+        maxlength="500"
+        placeholder="Descreva o que o cliente precisa."
+      ></textarea>
+      <mat-hint align="end">{{ form.controls.message.value.length }}/{{ maxMessageLength }}</mat-hint>
+      @if (hasFieldError('message')) {
+        <mat-error>Informe uma mensagem valida com ate 500 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
     <label class="field-label" for="attendance-subject">Assunto</label>
     <mat-form-field appearance="outline">
       <mat-select id="attendance-subject" formControlName="subject">
