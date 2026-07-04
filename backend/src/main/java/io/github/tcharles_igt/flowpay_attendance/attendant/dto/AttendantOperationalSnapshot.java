@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 
 import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
 
-public record AttendantResponse(
+public record AttendantOperationalSnapshot(
 	Long id,
 	String name,
 	TeamType team,

@@ -4,7 +4,7 @@ import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record AttendantRequest(
+public record AttendantUpdateRequest(
 	@NotBlank String name,
 	@NotNull TeamType team,
 	Boolean active

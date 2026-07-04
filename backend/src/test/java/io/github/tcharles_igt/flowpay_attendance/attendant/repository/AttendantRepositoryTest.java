@@ -64,6 +64,22 @@ class AttendantRepositoryTest {
 			.containsExactly("Bruna");
 	}
 
+	@Test
+	void shouldReturnOperationalSnapshotsOrderedByName() {
+		var alana = createAttendant("Alana", TeamType.LOANS);
+		createInProgressAttendance(alana, "Cliente 1");
+
+		var snapshots = attendantRepository.findOperationalSnapshots(AttendanceStatus.IN_PROGRESS, 3);
+		var alanaSnapshot = snapshots.stream()
+			.filter(snapshot -> snapshot.name().equals("Alana"))
+			.findFirst()
+			.orElseThrow();
+
+		assertThat(snapshots.getFirst().name()).isEqualTo("Alana");
+		assertThat(alanaSnapshot.activeAttendances()).isEqualTo(1);
+		assertThat(alanaSnapshot.availableSlots()).isEqualTo(2);
+	}
+
 	private Attendant createAttendant(String name, TeamType team) {
 		var attendant = new Attendant();
 		attendant.setName(name);

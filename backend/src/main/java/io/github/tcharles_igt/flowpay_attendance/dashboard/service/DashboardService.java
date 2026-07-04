@@ -16,6 +16,7 @@ import io.github.tcharles_igt.flowpay_attendance.attendance.domain.Attendance;
 import io.github.tcharles_igt.flowpay_attendance.attendance.domain.AttendanceStatus;
 import io.github.tcharles_igt.flowpay_attendance.attendance.repository.AttendanceRepository;
 import io.github.tcharles_igt.flowpay_attendance.attendant.repository.AttendantRepository;
+import io.github.tcharles_igt.flowpay_attendance.attendant.service.AttendantCapacityPolicy;
 import io.github.tcharles_igt.flowpay_attendance.dashboard.dto.DashboardAttendantResponse;
 import io.github.tcharles_igt.flowpay_attendance.dashboard.dto.DashboardInProgressAttendanceResponse;
 import io.github.tcharles_igt.flowpay_attendance.dashboard.dto.DashboardQueueItemResponse;
@@ -25,8 +26,6 @@ import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
 
 @Service
 public class DashboardService {
-
-	private static final long MAX_SIMULTANEOUS_ATTENDANCES = 3;
 
 	private final AttendanceRepository attendanceRepository;
 
@@ -70,7 +69,7 @@ public class DashboardService {
 					attendant.getName(),
 					attendant.getTeam(),
 					activeAttendances,
-					attendant.isActive() ? Math.max(0, MAX_SIMULTANEOUS_ATTENDANCES - activeAttendances) : 0
+					attendant.isActive() ? Math.max(0, AttendantCapacityPolicy.MAX_SIMULTANEOUS_ATTENDANCES - activeAttendances) : 0
 				);
 			})
 			.toList();

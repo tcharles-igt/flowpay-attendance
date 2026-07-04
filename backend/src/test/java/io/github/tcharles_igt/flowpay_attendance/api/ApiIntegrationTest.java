@@ -3,6 +3,7 @@ package io.github.tcharles_igt.flowpay_attendance.api;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
@@ -53,11 +54,67 @@ class ApiIntegrationTest {
 			.andExpect(header().string("Location", org.hamcrest.Matchers.containsString("/api/attendants/")))
 			.andExpect(jsonPath("$.name").value("Patricia"))
 			.andExpect(jsonPath("$.team").value("LOANS"))
-			.andExpect(jsonPath("$.active").value(true));
+			.andExpect(jsonPath("$.active").value(true))
+			.andExpect(jsonPath("$.activeAttendances").value(0))
+			.andExpect(jsonPath("$.availableSlots").value(3));
 
 		mockMvc.perform(get("/api/attendants"))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$[?(@.name=='Patricia')]").exists());
+	}
+
+	@Test
+	void shouldUpdateAttendantAndToggleStatus() throws Exception {
+		var maria = findAttendantByName("Maria");
+
+		mockMvc.perform(put("/api/attendants/{id}", maria.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "name": "Maria Oliveira",
+					  "team": "LOANS",
+					  "active": true
+					}
+					"""))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(maria.getId()))
+			.andExpect(jsonPath("$.name").value("Maria Oliveira"))
+			.andExpect(jsonPath("$.team").value("LOANS"))
+			.andExpect(jsonPath("$.active").value(true));
+
+		mockMvc.perform(patch("/api/attendants/{id}/status", maria.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "active": false
+					}
+					"""))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.active").value(false))
+			.andExpect(jsonPath("$.availableSlots").value(0));
+	}
+
+	@Test
+	void shouldBlockAttendantDeactivationWhenThereIsInProgressAttendance() throws Exception {
+		var joao = findAttendantByName("Joao");
+		createAttendance(
+			"Cliente Bloqueio",
+			AttendanceStatus.IN_PROGRESS,
+			AttendanceSubject.CARD_PROBLEM,
+			TeamType.CARDS,
+			joao,
+			"Mensagem de bloqueio"
+		);
+
+		mockMvc.perform(patch("/api/attendants/{id}/status", joao.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "active": false
+					}
+					"""))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.message").value("Cannot deactivate attendant with attendances in progress"));
 	}
 
 	@Test

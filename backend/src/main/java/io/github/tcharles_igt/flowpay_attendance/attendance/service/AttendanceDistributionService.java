@@ -14,8 +14,6 @@ import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
 @Service
 public class AttendanceDistributionService {
 
-	private static final int MAX_SIMULTANEOUS_ATTENDANCES = 3;
-
 	private final AttendantRepository attendantRepository;
 
 	private final AttendanceRepository attendanceRepository;
@@ -76,7 +74,11 @@ public class AttendanceDistributionService {
 	private java.util.Optional<io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant> findAvailableAttendant(
 		TeamType team
 	) {
-		return attendantRepository.findAvailableByTeam(team, AttendanceStatus.IN_PROGRESS, MAX_SIMULTANEOUS_ATTENDANCES)
+		return attendantRepository.findAvailableByTeam(
+			team,
+			AttendanceStatus.IN_PROGRESS,
+			io.github.tcharles_igt.flowpay_attendance.attendant.service.AttendantCapacityPolicy.MAX_SIMULTANEOUS_ATTENDANCES
+		)
 			.stream()
 			.findFirst();
 	}

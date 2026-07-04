@@ -23,6 +23,11 @@ public class GlobalExceptionHandler {
 		return buildError(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage(), List.of());
 	}
 
+	@ExceptionHandler(BadRequestException.class)
+	public ResponseEntity<ApiErrorResponse> handleBadRequestException(BadRequestException exception) {
+		return buildError(HttpStatus.BAD_REQUEST, exception.getMessage(), List.of());
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	public ResponseEntity<ApiErrorResponse> handleValidationException(MethodArgumentNotValidException exception) {
 		var details = exception.getBindingResult().getFieldErrors()
