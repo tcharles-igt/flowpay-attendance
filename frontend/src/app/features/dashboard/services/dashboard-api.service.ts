@@ -53,8 +53,4 @@ export class DashboardApiService {
   finishAttendance(attendanceId: number): Observable<unknown> {
     return this.http.patch(`/api/attendances/${attendanceId}/finish`, {});
   }
-
-  startAttendance(attendanceId: number): Observable<unknown> {
-    return this.http.patch(`/api/attendances/${attendanceId}/start`, {});
-  }
 }

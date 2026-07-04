@@ -11,6 +11,7 @@ export interface ConfirmationDialogData {
     customerName: string;
     subject: string;
     team: string;
+    attendant: string;
     message: string;
   };
 }

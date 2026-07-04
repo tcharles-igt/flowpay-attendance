@@ -11,7 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { EMPTY, catchError, finalize, forkJoin, tap } from 'rxjs';
+import { EMPTY, catchError, finalize, tap } from 'rxjs';
 
 import {
   ConfirmationDialogComponent,
@@ -21,7 +21,6 @@ import { ToastComponent } from '../../../shared/components/toast/toast.component
 import { NewAttendanceDialogComponent } from '../../dashboard/components/new-attendance-dialog.component';
 import {
   ApiErrorResponse,
-  DashboardResponse,
   AttendanceResponse,
   AttendanceStatus,
   CreateAttendanceRequest,
@@ -33,7 +32,6 @@ import {
   statusLabels,
   teamLabels
 } from '../../dashboard/models/dashboard.model';
-import { DashboardApiService } from '../../dashboard/services/dashboard-api.service';
 import { AttendanceApiService } from '../services/attendance-api.service';
 
 @Component({
@@ -54,28 +52,21 @@ import { AttendanceApiService } from '../services/attendance-api.service';
 })
 export class AttendanceManagementPageComponent {
   private readonly attendanceApi = inject(AttendanceApiService);
-  private readonly dashboardApi = inject(DashboardApiService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly displayedColumns = ['customerName', 'subject', 'team', 'status', 'createdAt', 'timeline', 'actions'];
+  protected readonly displayedColumns = ['customerName', 'subject', 'team', 'attendant', 'status', 'createdAt', 'timeline', 'actions'];
   protected readonly pageSizeOptions = [10, 25, 50];
   protected readonly statusOptions = dashboardStatusOptions;
   protected readonly loading = signal(true);
   protected readonly refreshing = signal(false);
   protected readonly submitting = signal(false);
-  protected readonly startingId = signal<number | null>(null);
   protected readonly finishingId = signal<number | null>(null);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly selectedTeam = signal<DashboardTeamFilter>('ALL');
   protected readonly selectedStatus = signal<DashboardStatusFilter>('ALL');
   protected readonly attendances = signal<AttendanceResponse[]>([]);
-  protected readonly teamAvailableSlots = signal<Record<TeamType, number>>({
-    CARDS: 0,
-    LOANS: 0,
-    OTHERS: 0
-  });
   protected readonly pageIndex = signal(0);
   protected readonly pageSize = signal(10);
 
@@ -190,45 +181,6 @@ export class AttendanceManagementPageComponent {
       });
   }
 
-  protected startAttendance(attendance: AttendanceResponse): void {
-    if (this.startingId() === attendance.id || !this.canStartAttendance(attendance)) {
-      return;
-    }
-
-    this.openConfirmationDialog(
-      {
-        title: 'Iniciar atendimento',
-        message: `Confirma o inicio manual do atendimento de ${attendance.customerName}?`,
-        confirmLabel: 'Iniciar atendimento',
-        summary: {
-          customerName: attendance.customerName,
-          subject: this.getSubjectLabel(attendance.subject),
-          team: this.getTeamLabel(attendance.team),
-          message: attendance.message
-        }
-      },
-      () => {
-        this.startingId.set(attendance.id);
-
-        this.attendanceApi
-          .startAttendance(attendance.id)
-          .pipe(
-            tap(() => {
-              this.showToast('success', 'Atendimento iniciado', 'O item saiu da fila e entrou em atendimento.');
-              this.loadAttendances(true);
-            }),
-            catchError((error) => {
-              this.showToast('error', 'Falha ao iniciar atendimento', this.formatError(error));
-              return EMPTY;
-            }),
-            finalize(() => this.startingId.set(null)),
-            takeUntilDestroyed(this.destroyRef)
-          )
-          .subscribe();
-      }
-    );
-  }
-
   protected finishAttendance(attendance: AttendanceResponse): void {
     if (this.finishingId() === attendance.id) {
       return;
@@ -243,6 +195,7 @@ export class AttendanceManagementPageComponent {
           customerName: attendance.customerName,
           subject: this.getSubjectLabel(attendance.subject),
           team: this.getTeamLabel(attendance.team),
+          attendant: this.getAttendantLabel(attendance),
           message: attendance.message
         }
       },
@@ -253,7 +206,7 @@ export class AttendanceManagementPageComponent {
           .finishAttendance(attendance.id)
           .pipe(
             tap(() => {
-              this.showToast('success', 'Atendimento finalizado', 'A lista foi atualizada com o novo status.');
+              this.showToast('success', 'Atendimento finalizado', 'A fila do mesmo time foi reavaliada automaticamente.');
               this.loadAttendances(true);
             }),
             catchError((error) => {
@@ -268,23 +221,15 @@ export class AttendanceManagementPageComponent {
     );
   }
 
-  protected canStartAttendance(attendance: AttendanceResponse): boolean {
-    return attendance.status === 'WAITING' && this.teamAvailableSlots()[attendance.team] > 0;
-  }
-
   protected canFinish(status: AttendanceStatus): boolean {
     return status === 'IN_PROGRESS';
   }
 
   protected isRowBusy(attendanceId: number): boolean {
-    return this.startingId() === attendanceId || this.finishingId() === attendanceId;
+    return this.finishingId() === attendanceId;
   }
 
   protected getActionLabel(attendance: AttendanceResponse): string | null {
-    if (attendance.status === 'WAITING') {
-      return this.startingId() === attendance.id ? 'Iniciando...' : 'Iniciar atendimento';
-    }
-
     if (attendance.status === 'IN_PROGRESS') {
       return this.finishingId() === attendance.id ? 'Finalizando...' : 'Finalizar';
     }
@@ -293,20 +238,13 @@ export class AttendanceManagementPageComponent {
   }
 
   protected handleAttendanceAction(attendance: AttendanceResponse): void {
-    if (attendance.status === 'WAITING') {
-      this.startAttendance(attendance);
-      return;
-    }
-
     if (attendance.status === 'IN_PROGRESS') {
       this.finishAttendance(attendance);
     }
   }
 
   protected getActionAriaLabel(attendance: AttendanceResponse): string {
-    return attendance.status === 'WAITING'
-      ? `Iniciar atendimento de ${attendance.customerName}`
-      : `Finalizar atendimento de ${attendance.customerName}`;
+    return `Finalizar atendimento de ${attendance.customerName}`;
   }
 
   protected getSubjectLabel(subject: AttendanceResponse['subject']): string {
@@ -319,6 +257,10 @@ export class AttendanceManagementPageComponent {
 
   protected getStatusLabel(status: AttendanceStatus): string {
     return statusLabels[status];
+  }
+
+  protected getAttendantLabel(attendance: AttendanceResponse): string {
+    return attendance.attendantName ?? 'Aguardando atribuicao';
   }
 
   protected formatDateTime(value: string | null): string {
@@ -341,7 +283,7 @@ export class AttendanceManagementPageComponent {
       return `Iniciado em ${this.formatDateTime(attendance.startedAt)}`;
     }
 
-    return 'Aguardando inicio manual';
+    return 'Na fila aguardando capacidade do time';
   }
 
   private loadAttendances(isRefresh = false): void {
@@ -349,14 +291,10 @@ export class AttendanceManagementPageComponent {
     this.refreshing.set(isRefresh);
     this.errorMessage.set(null);
 
-    forkJoin({
-      attendances: this.attendanceApi.getAttendances(),
-      dashboard: this.dashboardApi.getDashboard()
-    })
+    this.attendanceApi.getAttendances()
       .pipe(
-        tap(({ attendances, dashboard }) => {
+        tap((attendances) => {
           this.attendances.set(attendances);
-          this.teamAvailableSlots.set(this.mapTeamAvailableSlots(dashboard));
         }),
         catchError((error) => {
           this.errorMessage.set(this.formatError(error));
@@ -377,8 +315,11 @@ export class AttendanceManagementPageComponent {
     this.attendanceApi
       .createAttendance(payload)
       .pipe(
-        tap(() => {
-          this.showToast('success', 'Atendimento criado', 'O novo chamado entrou na lista de gerenciamento.');
+        tap((attendance) => {
+          const message = attendance.status === 'IN_PROGRESS'
+            ? 'O chamado foi distribuido automaticamente e ja entrou em atendimento.'
+            : 'O chamado entrou na fila do time e sera distribuido assim que houver capacidade.';
+          this.showToast('success', 'Atendimento criado', message);
           this.loadAttendances(true);
         }),
         catchError((error) => {
@@ -393,20 +334,6 @@ export class AttendanceManagementPageComponent {
 
   private countByStatus(attendances: AttendanceResponse[], status: AttendanceStatus): number {
     return attendances.filter((attendance) => attendance.status === status).length;
-  }
-
-  private mapTeamAvailableSlots(dashboard: DashboardResponse): Record<TeamType, number> {
-    return dashboard.attendants.reduce<Record<TeamType, number>>(
-      (slotsByTeam, attendant) => {
-        slotsByTeam[attendant.team] += attendant.availableSlots;
-        return slotsByTeam;
-      },
-      {
-        CARDS: 0,
-        LOANS: 0,
-        OTHERS: 0
-      }
-    );
   }
 
   private openConfirmationDialog(data: ConfirmationDialogData, onConfirm: () => void): void {

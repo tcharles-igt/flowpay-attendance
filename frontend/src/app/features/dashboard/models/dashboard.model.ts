@@ -69,6 +69,7 @@ export interface AttendanceResponse {
   team: TeamType;
   status: AttendanceStatus;
   attendantId: number | null;
+  attendantName: string | null;
   createdAt: string;
   startedAt: string | null;
   finishedAt: string | null;

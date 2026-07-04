@@ -120,6 +120,11 @@
               </td>
             </ng-container>
 
+            <ng-container matColumnDef="attendant">
+              <th mat-header-cell *matHeaderCellDef>Atendente</th>
+              <td mat-cell *matCellDef="let attendance">{{ getAttendantLabel(attendance) }}</td>
+            </ng-container>
+
             <ng-container matColumnDef="createdAt">
               <th mat-header-cell *matHeaderCellDef>Criado em</th>
               <td mat-cell *matCellDef="let attendance">{{ formatDateTime(attendance.createdAt) }}</td>
@@ -139,7 +144,7 @@
                     type="button"
                     (click)="handleAttendanceAction(attendance)"
                     [attr.aria-label]="getActionAriaLabel(attendance)"
-                    [disabled]="isRowBusy(attendance.id) || (attendance.status === 'WAITING' && !canStartAttendance(attendance))"
+                    [disabled]="isRowBusy(attendance.id)"
                   >
                     {{ actionLabel }}
                   </button>

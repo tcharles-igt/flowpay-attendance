@@ -16,10 +16,6 @@ export class AttendanceApiService {
     return this.http.post<AttendanceResponse>('/api/attendances', payload);
   }
 
-  startAttendance(attendanceId: number): Observable<AttendanceResponse> {
-    return this.http.patch<AttendanceResponse>(`/api/attendances/${attendanceId}/start`, {});
-  }
-
   finishAttendance(attendanceId: number): Observable<AttendanceResponse> {
     return this.http.patch<AttendanceResponse>(`/api/attendances/${attendanceId}/finish`, {});
   }
