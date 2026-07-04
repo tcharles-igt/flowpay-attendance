@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>{{ title }}</h2>
+
+<mat-dialog-content>
+  <p class="dialog-copy">{{ copy }}</p>
+
+  <form class="attendant-form" [formGroup]="form" (ngSubmit)="submit()">
+    <label class="field-label" for="attendant-name">Nome</label>
+    <mat-form-field appearance="outline">
+      <input id="attendant-name" matInput formControlName="name" placeholder="Ex.: Maria Oliveira">
+      @if (hasNameError()) {
+        <mat-error>Informe um nome valido com pelo menos 3 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <label class="field-label" for="attendant-team">Time</label>
+    <mat-form-field appearance="outline">
+      <mat-select id="attendant-team" formControlName="team">
+        @for (option of teamOptions; track option.value) {
+          <mat-option [value]="option.value">{{ option.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="close()">Cancelar</button>
+  <button mat-flat-button type="button" class="primary-button" (click)="submit()">{{ submitLabel }}</button>
+</mat-dialog-actions>

@@ -1,0 +1,172 @@
+<mat-toolbar class="dashboard-toolbar">
+  <div class="dashboard-toolbar__inner">
+    <div class="dashboard-toolbar__brand">
+      <span class="dashboard-toolbar__eyebrow">FlowPay Attendance</span>
+      <strong>Gerenciamento de atendentes</strong>
+    </div>
+
+    <div class="dashboard-toolbar__meta">
+      <button mat-stroked-button type="button" (click)="reload()" [disabled]="refreshing() || loading()">
+        Atualizar lista
+      </button>
+      <button mat-flat-button type="button" class="primary-button" (click)="openCreateDialog()" [disabled]="submitting()">
+        Novo atendente
+      </button>
+    </div>
+  </div>
+</mat-toolbar>
+
+@if (refreshing()) {
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+}
+
+<section class="attendants-page">
+  <section class="summary-grid">
+    @for (card of summaryCards(); track card.label) {
+      <mat-card
+        class="summary-card"
+        [class.summary-card--warn]="card.tone === 'warn'"
+        [class.summary-card--accent]="card.tone === 'accent'"
+        [class.summary-card--success]="card.tone === 'success'"
+      >
+        <span>{{ card.label }}</span>
+        <strong>{{ card.value }}</strong>
+      </mat-card>
+    }
+  </section>
+
+  <mat-card class="filters-card">
+    <div class="section-heading">
+      <div>
+        <p class="section-heading__eyebrow">Recorte operacional</p>
+      </div>
+    </div>
+
+    <div class="filters-card__controls">
+      <mat-form-field appearance="outline">
+        <mat-label>Time</mat-label>
+        <mat-select [value]="selectedTeam()" (selectionChange)="updateTeamFilter($event.value)">
+          @for (option of teamOptions(); track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Status</mat-label>
+        <mat-select [value]="selectedStatus()" (selectionChange)="updateStatusFilter($event.value)">
+          @for (option of statusOptions; track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-card>
+
+  @if (loading()) {
+    <mat-card class="feedback-card feedback-card--loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <div>
+        <strong>Carregando atendentes</strong>
+        <p>Buscando a base operacional e calculando a carga atual de cada pessoa.</p>
+      </div>
+    </mat-card>
+  } @else if (errorMessage()) {
+    <mat-card class="feedback-card feedback-card--error">
+      <div>
+        <strong>Falha ao carregar atendentes</strong>
+        <p>{{ errorMessage() }}</p>
+      </div>
+    </mat-card>
+  } @else {
+    <mat-card class="data-card attendants-table-card">
+      <div class="section-heading">
+        <div>
+          <p class="section-heading__eyebrow">Base operacional</p>
+        </div>
+      </div>
+
+      @if (filteredAttendants().length) {
+        <div class="table-shell">
+          <table mat-table [dataSource]="filteredAttendants()" [trackBy]="trackByAttendantId" class="dashboard-table">
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef>Nome</th>
+              <td mat-cell *matCellDef="let attendant">
+                <div class="cell-stack">
+                  <strong>{{ attendant.name }}</strong>
+                  <small>#{{ attendant.id }}</small>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="team">
+              <th mat-header-cell *matHeaderCellDef>Time</th>
+              <td mat-cell *matCellDef="let attendant">{{ getTeamLabel(attendant.team) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let attendant">
+                <span
+                  class="status-pill"
+                  [class.status-pill--active]="attendant.active"
+                  [class.status-pill--inactive]="!attendant.active"
+                >
+                  {{ getStatusLabel(attendant) }}
+                </span>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="activeAttendances">
+              <th mat-header-cell *matHeaderCellDef>Em andamento</th>
+              <td mat-cell *matCellDef="let attendant">{{ attendant.activeAttendances }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="availableSlots">
+              <th mat-header-cell *matHeaderCellDef>Vagas</th>
+              <td mat-cell *matCellDef="let attendant">
+                <strong [class.capacity-zero]="attendant.availableSlots === 0">{{ attendant.availableSlots }}</strong>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="updatedAt">
+              <th mat-header-cell *matHeaderCellDef>Atualizado em</th>
+              <td mat-cell *matCellDef="let attendant">{{ formatDateTime(attendant.updatedAt) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Acoes</th>
+              <td mat-cell *matCellDef="let attendant">
+                <div class="row-actions">
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    (click)="openEditDialog(attendant)"
+                    [disabled]="isRowBusy(attendant.id)"
+                  >
+                    Editar
+                  </button>
+                  <button
+                    mat-flat-button
+                    type="button"
+                    class="status-action"
+                    [class.status-action--danger]="attendant.active"
+                    [disabled]="isRowBusy(attendant.id)"
+                    (click)="toggleStatus(attendant)"
+                  >
+                    {{ getStatusActionLabel(attendant) }}
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+          </table>
+        </div>
+      } @else {
+        <p class="empty-copy">{{ getEmptyMessage() }}</p>
+      }
+    </mat-card>
+  }
+</section>

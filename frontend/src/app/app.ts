@@ -18,6 +18,11 @@ export class App {
       label: 'Atendimentos',
       description: 'Gerenciamento e historico',
       route: '/atendimentos'
+    },
+    {
+      label: 'Atendentes',
+      description: 'Capacidade, status e time',
+      route: '/atendentes'
     }
   ];
 }

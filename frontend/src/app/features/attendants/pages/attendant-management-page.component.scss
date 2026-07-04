@@ -1,0 +1,229 @@
+:host {
+  display: block;
+  background: #edf3ff;
+}
+
+.attendants-page {
+  display: grid;
+  gap: var(--space-16);
+  width: min(100% - 2rem, var(--content-width));
+  margin: 0 auto;
+  padding: var(--space-16) 0 var(--space-24);
+}
+
+.dashboard-toolbar {
+  min-height: 56px;
+  padding: 2rem 0 0;
+  background: transparent;
+}
+
+.dashboard-toolbar__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  width: min(100% - 2rem, var(--content-width));
+  margin: 0 auto;
+}
+
+.dashboard-toolbar__brand {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.dashboard-toolbar__brand strong {
+  font-size: 1.1rem;
+  color: var(--ink-strong);
+}
+
+.dashboard-toolbar__eyebrow {
+  color: var(--muted-color);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.summary-card,
+.filters-card,
+.feedback-card {
+  border-radius: var(--radius-card) !important;
+}
+
+.summary-card {
+  display: grid;
+  gap: 6px;
+  padding: 1rem;
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-card);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.summary-card span {
+  color: var(--muted-color);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summary-card strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.summary-card--warn {
+  border-color: rgba(234, 88, 12, 0.18);
+}
+
+.summary-card--accent {
+  border-color: rgba(8, 145, 178, 0.18);
+}
+
+.summary-card--success {
+  border-color: rgba(22, 101, 52, 0.18);
+}
+
+.filters-card,
+.feedback-card {
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-16);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.filters-card__controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.attendants-table-card {
+  padding: var(--space-16);
+}
+
+.cell-stack {
+  display: grid;
+  gap: 2px;
+}
+
+.cell-stack strong {
+  font-size: 0.95rem;
+}
+
+.cell-stack small {
+  color: var(--muted-color);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.status-pill--active {
+  color: var(--success-soft);
+  background: rgba(220, 252, 231, 0.92);
+}
+
+.status-pill--inactive {
+  color: var(--warning-soft);
+  background: rgba(255, 237, 213, 0.9);
+}
+
+.capacity-zero {
+  color: var(--danger-soft);
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+.status-action {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--accent-blue);
+}
+
+.status-action--danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--danger-soft);
+}
+
+.feedback-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.feedback-card p {
+  margin: var(--space-4) 0 0;
+  color: var(--ink-soft);
+}
+
+.feedback-card--error {
+  border-color: rgba(239, 68, 68, 0.18);
+  background: rgba(254, 242, 242, 0.96);
+}
+
+.primary-button {
+  background: var(--accent-blue);
+  color: white;
+  font-weight: 700;
+}
+
+@media (max-width: 1080px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 840px) {
+  .dashboard-toolbar__inner,
+  .dashboard-toolbar__meta {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .filters-card__controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .attendants-page {
+    width: min(100% - 1rem, var(--content-width));
+  }
+
+  .filters-card,
+  .feedback-card,
+  .attendants-table-card {
+    padding: var(--space-12);
+  }
+
+  .dashboard-toolbar__meta {
+    width: 100%;
+  }
+
+  .dashboard-toolbar__meta button {
+    width: 100%;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .row-actions {
+    flex-direction: column;
+  }
+}
