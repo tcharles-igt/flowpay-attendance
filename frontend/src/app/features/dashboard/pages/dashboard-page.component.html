@@ -6,7 +6,9 @@
     </div>
 
     <div class="dashboard-toolbar__meta">
-      <span class="dashboard-toolbar__pill">Painel vivo</span>
+      <button mat-stroked-button type="button" (click)="refreshNow()" [disabled]="refreshing() || loading()">
+        Atualizar
+      </button>
       <button mat-flat-button type="button" class="primary-button" (click)="openNewAttendanceDialog()" [disabled]="submitting()">
         Novo atendimento
       </button>
@@ -86,6 +88,16 @@
     <section class="content-grid content-grid--top">
       <app-team-summary [teams]="dashboard.teams"></app-team-summary>
       <app-attendants-table [attendants]="dashboard.attendants"></app-attendants-table>
+    </section>
+
+    <section class="content-grid content-grid--bottom">
+      <app-queue-table [queue]="dashboard.queue" [referenceTime]="lastUpdated()"></app-queue-table>
+      <app-in-progress-table
+        [attendances]="dashboard.inProgressAttendances"
+        [referenceTime]="lastUpdated()"
+        [finishingId]="finishingId()"
+        (finish)="finishAttendance($event)"
+      ></app-in-progress-table>
     </section>
 
   } @else {
