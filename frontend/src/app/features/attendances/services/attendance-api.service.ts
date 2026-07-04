@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { AttendanceResponse } from '../../dashboard/models/dashboard.model';
+import { AttendanceResponse, CreateAttendanceRequest } from '../../dashboard/models/dashboard.model';
 
 @Injectable({ providedIn: 'root' })
 export class AttendanceApiService {
@@ -10,5 +10,17 @@ export class AttendanceApiService {
 
   getAttendances(): Observable<AttendanceResponse[]> {
     return this.http.get<AttendanceResponse[]>('/api/attendances');
+  }
+
+  createAttendance(payload: CreateAttendanceRequest): Observable<AttendanceResponse> {
+    return this.http.post<AttendanceResponse>('/api/attendances', payload);
+  }
+
+  startAttendance(attendanceId: number): Observable<AttendanceResponse> {
+    return this.http.patch<AttendanceResponse>(`/api/attendances/${attendanceId}/start`, {});
+  }
+
+  finishAttendance(attendanceId: number): Observable<AttendanceResponse> {
+    return this.http.patch<AttendanceResponse>(`/api/attendances/${attendanceId}/finish`, {});
   }
 }

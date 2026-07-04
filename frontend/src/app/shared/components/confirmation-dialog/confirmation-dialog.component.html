@@ -1,0 +1,34 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+
+<mat-dialog-content>
+  <p class="dialog-copy">{{ data.message }}</p>
+
+  @if (data.summary; as summary) {
+    <section class="dialog-summary">
+      <div class="summary-field">
+        <span class="field-label">Cliente</span>
+        <p class="field-value">{{ summary.customerName }}</p>
+      </div>
+
+      <div class="summary-field">
+        <span class="field-label">Assunto</span>
+        <p class="field-value">{{ summary.subject }}</p>
+      </div>
+
+      <div class="summary-field">
+        <span class="field-label">Mensagem</span>
+        <p class="field-value field-value--message">{{ summary.message }}</p>
+      </div>
+
+      <div class="summary-meta">
+        <span class="field-label field-label--muted">Time</span>
+        <p class="field-value field-value--muted">{{ summary.team }}</p>
+      </div>
+    </section>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button type="button" (click)="cancel()">{{ data.cancelLabel ?? 'Cancelar' }}</button>
+  <button mat-flat-button type="button" class="confirm-button" (click)="confirm()">{{ data.confirmLabel }}</button>
+</mat-dialog-actions>

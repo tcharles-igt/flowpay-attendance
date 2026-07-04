@@ -11,6 +11,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { EMPTY, catchError, finalize, tap } from 'rxjs';
 
+import {
+  ConfirmationDialogComponent,
+  ConfirmationDialogData
+} from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
 import { AttendantsTableComponent } from '../components/attendants-table.component';
 import { InProgressTableComponent } from '../components/in-progress-table.component';
 import { MetricCardComponent } from '../components/metric-card.component';
@@ -242,30 +246,39 @@ export class DashboardPageComponent {
       return;
     }
 
-    this.finishingId.set(attendanceId);
+    this.openConfirmationDialog(
+      {
+        title: 'Finalizar atendimento',
+        message: 'Confirma a finalizacao do atendimento selecionado?',
+        confirmLabel: 'Finalizar atendimento'
+      },
+      () => {
+        this.finishingId.set(attendanceId);
 
-    this.api
-      .finishAttendance(attendanceId)
-      .pipe(
-        tap(() => {
-          this.showToast({
-            tone: 'success',
-            title: 'Atendimento finalizado',
-            message: 'A capacidade foi liberada e o dashboard vai atualizar automaticamente.'
-          });
-        }),
-        catchError((error) => {
-          this.showToast({
-            tone: 'error',
-            title: 'Falha ao finalizar atendimento',
-            message: this.formatError(error)
-          });
-          return EMPTY;
-        }),
-        finalize(() => this.finishingId.set(null)),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe();
+        this.api
+          .finishAttendance(attendanceId)
+          .pipe(
+            tap(() => {
+              this.showToast({
+                tone: 'success',
+                title: 'Atendimento finalizado',
+                message: 'A capacidade foi liberada e o dashboard vai atualizar automaticamente.'
+              });
+            }),
+            catchError((error) => {
+              this.showToast({
+                tone: 'error',
+                title: 'Falha ao finalizar atendimento',
+                message: this.formatError(error)
+              });
+              return EMPTY;
+            }),
+            finalize(() => this.finishingId.set(null)),
+            takeUntilDestroyed(this.destroyRef)
+          )
+          .subscribe();
+      }
+    );
   }
 
   protected refreshNow(): void {
@@ -308,6 +321,23 @@ export class DashboardPageComponent {
       verticalPosition: 'top',
       panelClass: ['app-toast-shell', `app-toast-shell--${data.tone}`]
     });
+  }
+
+  private openConfirmationDialog(data: ConfirmationDialogData, onConfirm: () => void): void {
+    this.dialog
+      .open(ConfirmationDialogComponent, {
+        width: '28rem',
+        maxWidth: 'calc(100vw - 1rem)',
+        autoFocus: false,
+        data
+      })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          onConfirm();
+        }
+      });
   }
 
   private openDashboardStream(): void {

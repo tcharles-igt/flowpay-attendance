@@ -1,0 +1,77 @@
+:host {
+  display: block;
+  font-family: var(--font-family-base);
+}
+
+.mat-mdc-dialog-title,
+.mat-mdc-dialog-content,
+.mat-mdc-dialog-actions,
+.dialog-copy,
+.field-label,
+.field-value,
+button {
+  font-family: var(--font-family-base);
+}
+
+.dialog-copy {
+  margin: 0 0 0.75rem;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.dialog-summary {
+  display: grid;
+  gap: 0.625rem;
+  min-width: min(32rem, 100%);
+  padding-top: 0.25rem;
+}
+
+.summary-field {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #dbe4ee;
+  border-radius: 0.25rem;
+  background: #fff;
+}
+
+.summary-meta {
+  padding-top: 0.125rem;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.field-label--muted {
+  margin-bottom: 0.125rem;
+  color: var(--muted-color);
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.field-value {
+  margin: 0;
+  color: var(--ink-strong);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.field-value--message {
+  white-space: pre-wrap;
+}
+
+.field-value--muted {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.confirm-button {
+  background: var(--accent-blue);
+  color: white;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}

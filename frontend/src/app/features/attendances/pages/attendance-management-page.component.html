@@ -133,14 +133,19 @@
             <ng-container matColumnDef="actions">
               <th mat-header-cell *matHeaderCellDef>Acoes</th>
               <td mat-cell *matCellDef="let attendance">
-                <button
-                  mat-stroked-button
-                  type="button"
-                  (click)="finishAttendance(attendance.id)"
-                  [disabled]="!canFinish(attendance.status) || finishingId() === attendance.id"
-                >
-                  {{ finishingId() === attendance.id ? 'Finalizando...' : 'Finalizar' }}
-                </button>
+                @if (getActionLabel(attendance); as actionLabel) {
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    (click)="handleAttendanceAction(attendance)"
+                    [attr.aria-label]="getActionAriaLabel(attendance)"
+                    [disabled]="isRowBusy(attendance.id) || (attendance.status === 'WAITING' && !canStartAttendance(attendance))"
+                  >
+                    {{ actionLabel }}
+                  </button>
+                } @else {
+                  <span>-</span>
+                }
               </td>
             </ng-container>
 
