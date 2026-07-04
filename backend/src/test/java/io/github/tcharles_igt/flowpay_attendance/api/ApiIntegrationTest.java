@@ -61,7 +61,7 @@ class ApiIntegrationTest {
 	}
 
 	@Test
-	void shouldCreateListAndFinishAttendance() throws Exception {
+	void shouldCreateStartListAndFinishAttendance() throws Exception {
 		var created = mockMvc.perform(post("/api/attendances")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
@@ -73,7 +73,7 @@ class ApiIntegrationTest {
 					"""))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.team").value("CARDS"))
-			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+			.andExpect(jsonPath("$.status").value("WAITING"))
 			.andReturn();
 
 		var attendanceId = JsonTestUtils.readLong(created.getResponse().getContentAsString(), "$.id");
@@ -83,6 +83,11 @@ class ApiIntegrationTest {
 			.andExpect(jsonPath("$.id").value(attendanceId))
 			.andExpect(jsonPath("$.customerName").value("Cliente API"))
 			.andExpect(jsonPath("$.message").value("Cartao bloqueado apos compra online"));
+
+		mockMvc.perform(patch("/api/attendances/{id}/start", attendanceId))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+			.andExpect(jsonPath("$.startedAt").isNotEmpty());
 
 		mockMvc.perform(patch("/api/attendances/{id}/finish", attendanceId))
 			.andExpect(status().isOk())
@@ -130,6 +135,26 @@ class ApiIntegrationTest {
 			.andExpect(jsonPath("$.attendantId").value(joao.getId()))
 			.andExpect(jsonPath("$.message").value("Mensagem para finalizar"))
 			.andExpect(jsonPath("$.finishedAt").isNotEmpty());
+	}
+
+	@Test
+	void shouldStartAttendanceEndpointAndReturnStartedPayload() throws Exception {
+		var waiting = createAttendance(
+			"Cliente Inicio API",
+			AttendanceStatus.WAITING,
+			AttendanceSubject.CARD_PROBLEM,
+			TeamType.CARDS,
+			null,
+			"Mensagem para iniciar"
+		);
+
+		mockMvc.perform(patch("/api/attendances/{id}/start", waiting.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.id").value(waiting.getId()))
+			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+			.andExpect(jsonPath("$.attendantId").isNumber())
+			.andExpect(jsonPath("$.message").value("Mensagem para iniciar"))
+			.andExpect(jsonPath("$.startedAt").isNotEmpty());
 	}
 
 	@Test
@@ -190,6 +215,23 @@ class ApiIntegrationTest {
 		mockMvc.perform(patch("/api/attendances/{id}/finish", waiting.getId()))
 			.andExpect(status().isUnprocessableEntity())
 			.andExpect(jsonPath("$.message").value("Only in-progress attendances can be finished"));
+	}
+
+	@Test
+	void shouldReturnBusinessErrorWhenStartingNonWaitingAttendance() throws Exception {
+		var joao = findAttendantByName("Joao");
+		var inProgress = createAttendance(
+			"Ja em atendimento",
+			AttendanceStatus.IN_PROGRESS,
+			AttendanceSubject.CARD_PROBLEM,
+			TeamType.CARDS,
+			joao,
+			"Mensagem em andamento"
+		);
+
+		mockMvc.perform(patch("/api/attendances/{id}/start", inProgress.getId()))
+			.andExpect(status().isUnprocessableEntity())
+			.andExpect(jsonPath("$.message").value("Only waiting attendances can be started"));
 	}
 
 	private Attendant findAttendantByName(String name) {

@@ -1,8 +1,6 @@
 package io.github.tcharles_igt.flowpay_attendance.attendance.service;
 
 import java.time.OffsetDateTime;
-import java.util.Optional;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -10,7 +8,6 @@ import io.github.tcharles_igt.flowpay_attendance.attendance.domain.Attendance;
 import io.github.tcharles_igt.flowpay_attendance.attendance.domain.AttendanceStatus;
 import io.github.tcharles_igt.flowpay_attendance.attendance.domain.AttendanceSubject;
 import io.github.tcharles_igt.flowpay_attendance.attendance.repository.AttendanceRepository;
-import io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant;
 import io.github.tcharles_igt.flowpay_attendance.attendant.repository.AttendantRepository;
 import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
 
@@ -40,29 +37,31 @@ public class AttendanceDistributionService {
 	}
 
 	@Transactional
-	public Attendance distributeNewAttendance(Attendance attendance) {
+	public Attendance queueNewAttendance(Attendance attendance) {
 		attendance.setTeam(resolveTeam(attendance.getSubject()));
+		attendance.setAttendant(null);
+		attendance.setStatus(AttendanceStatus.WAITING);
+		attendance.setStartedAt(null);
+		attendance.setFinishedAt(null);
+		return attendanceRepository.save(attendance);
+	}
+
+	@Transactional
+	public Attendance startAttendance(Attendance attendance) {
 		assignIfPossible(attendance);
+		if (attendance.getStatus() != AttendanceStatus.IN_PROGRESS) {
+			throw new io.github.tcharles_igt.flowpay_attendance.shared.exception.BusinessException(
+				"No attendant capacity available for this attendance right now"
+			);
+		}
 		return attendanceRepository.save(attendance);
 	}
 
 	@Transactional
 	public Attendance finishAttendance(Attendance attendance) {
-		if (attendance.getStatus() == AttendanceStatus.FINISHED) {
-			return attendance;
-		}
-
-		var releasedAttendant = attendance.getAttendant();
-		var team = attendance.getTeam();
-
 		attendance.setStatus(AttendanceStatus.FINISHED);
 		attendance.setFinishedAt(OffsetDateTime.now());
 		attendanceRepository.save(attendance);
-
-		if (releasedAttendant != null) {
-			redistributeNextWaitingAttendance(team, releasedAttendant);
-		}
-
 		return attendance;
 	}
 
@@ -78,29 +77,21 @@ public class AttendanceDistributionService {
 		attendance.setStartedAt(null);
 	}
 
-	private Optional<Attendant> findAvailableAttendant(TeamType team) {
+	private java.util.Optional<io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant> findAvailableAttendant(
+		TeamType team
+	) {
 		return attendantRepository.findAvailableByTeam(team, AttendanceStatus.IN_PROGRESS, MAX_SIMULTANEOUS_ATTENDANCES)
 			.stream()
 			.findFirst();
 	}
 
-	private void assignAttendance(Attendance attendance, Attendant attendant) {
+	private void assignAttendance(
+		Attendance attendance,
+		io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant attendant
+	) {
 		attendance.setAttendant(attendant);
 		attendance.setStatus(AttendanceStatus.IN_PROGRESS);
 		attendance.setStartedAt(OffsetDateTime.now());
 		attendance.setFinishedAt(null);
-	}
-
-	private void redistributeNextWaitingAttendance(TeamType team, Attendant attendant) {
-		if (attendanceRepository.countByAttendantIdAndStatus(attendant.getId(), AttendanceStatus.IN_PROGRESS)
-			>= MAX_SIMULTANEOUS_ATTENDANCES) {
-			return;
-		}
-
-		attendanceRepository.findFirstByTeamAndStatusOrderByCreatedAtAsc(team, AttendanceStatus.WAITING)
-			.ifPresent(waitingAttendance -> {
-				assignAttendance(waitingAttendance, attendant);
-				attendanceRepository.save(waitingAttendance);
-			});
 	}
 }

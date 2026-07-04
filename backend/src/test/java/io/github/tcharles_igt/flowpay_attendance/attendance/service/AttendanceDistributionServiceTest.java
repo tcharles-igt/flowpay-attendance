@@ -1,17 +1,15 @@
 package io.github.tcharles_igt.flowpay_attendance.attendance.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
-import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +25,7 @@ import io.github.tcharles_igt.flowpay_attendance.attendance.repository.Attendanc
 import io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant;
 import io.github.tcharles_igt.flowpay_attendance.attendant.repository.AttendantRepository;
 import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
+import io.github.tcharles_igt.flowpay_attendance.shared.exception.BusinessException;
 
 @ExtendWith(MockitoExtension.class)
 class AttendanceDistributionServiceTest {
@@ -62,15 +61,29 @@ class AttendanceDistributionServiceTest {
 	}
 
 	@Test
-	void shouldAssignToAvailableAttendant() {
+	void shouldQueueNewAttendance() {
+		var attendance = newAttendance("Cliente Disponivel", AttendanceSubject.CARD_PROBLEM);
+
+		var queued = distributionService.queueNewAttendance(attendance);
+
+		assertThat(queued.getTeam()).isEqualTo(TeamType.CARDS);
+		assertThat(queued.getStatus()).isEqualTo(AttendanceStatus.WAITING);
+		assertThat(queued.getAttendant()).isNull();
+		assertThat(queued.getStartedAt()).isNull();
+		verify(attendanceRepository).save(attendance);
+	}
+
+	@Test
+	void shouldStartAttendanceWhenCapacityExists() {
 		var availableAttendant = attendant(10L, "Joao", TeamType.CARDS);
 		var attendance = newAttendance("Cliente Disponivel", AttendanceSubject.CARD_PROBLEM);
+		attendance.setTeam(TeamType.CARDS);
+		attendance.setStatus(AttendanceStatus.WAITING);
 		when(attendantRepository.findAvailableByTeam(TeamType.CARDS, AttendanceStatus.IN_PROGRESS, 3))
 			.thenReturn(List.of(availableAttendant));
 
-		var distributed = distributionService.distributeNewAttendance(attendance);
+		var distributed = distributionService.startAttendance(attendance);
 
-		assertThat(distributed.getTeam()).isEqualTo(TeamType.CARDS);
 		assertThat(distributed.getStatus()).isEqualTo(AttendanceStatus.IN_PROGRESS);
 		assertThat(distributed.getAttendant()).isSameAs(availableAttendant);
 		assertThat(distributed.getStartedAt()).isNotNull();
@@ -78,101 +91,45 @@ class AttendanceDistributionServiceTest {
 	}
 
 	@Test
-	void shouldNotExceedMaximumSimultaneousAttendances() {
+	void shouldRejectStartWhenTeamHasNoCapacity() {
 		var attendance = newAttendance("Cliente Limite", AttendanceSubject.CARD_PROBLEM);
+		attendance.setTeam(TeamType.CARDS);
+		attendance.setStatus(AttendanceStatus.WAITING);
 		when(attendantRepository.findAvailableByTeam(TeamType.CARDS, AttendanceStatus.IN_PROGRESS, 3))
 			.thenReturn(List.of());
 
-		var distributed = distributionService.distributeNewAttendance(attendance);
-
-		assertThat(distributed.getStatus()).isEqualTo(AttendanceStatus.WAITING);
-		assertThat(distributed.getAttendant()).isNull();
-		assertThat(distributed.getStartedAt()).isNull();
+		assertThatThrownBy(() -> distributionService.startAttendance(attendance))
+			.isInstanceOf(BusinessException.class)
+			.hasMessage("No attendant capacity available for this attendance right now");
 		verify(attendantRepository).findAvailableByTeam(TeamType.CARDS, AttendanceStatus.IN_PROGRESS, 3);
+		verify(attendanceRepository, never()).save(attendance);
 	}
 
 	@Test
-	void shouldSendToWaitingWhenNoAttendantHasCapacity() {
-		var attendance = newAttendance("Cliente Fila", AttendanceSubject.LOAN_REQUEST);
-		when(attendantRepository.findAvailableByTeam(TeamType.LOANS, AttendanceStatus.IN_PROGRESS, 3))
-			.thenReturn(List.of());
-
-		var distributed = distributionService.distributeNewAttendance(attendance);
-
-		assertThat(distributed.getTeam()).isEqualTo(TeamType.LOANS);
-		assertThat(distributed.getStatus()).isEqualTo(AttendanceStatus.WAITING);
-		assertThat(distributed.getAttendant()).isNull();
-		assertThat(distributed.getStartedAt()).isNull();
-	}
-
-	@Test
-	void shouldRedistributeOldestWaitingAttendanceWhenFinishing() {
-		var releasedAttendant = attendant(20L, "Carla", TeamType.CARDS);
+	void shouldFinishAttendanceWithoutRedistributingWaitingQueue() {
 		var inProgress = new Attendance();
 		inProgress.setTeam(TeamType.CARDS);
 		inProgress.setMessage("Mensagem em atendimento");
 		inProgress.setStatus(AttendanceStatus.IN_PROGRESS);
-		inProgress.setAttendant(releasedAttendant);
-		inProgress.setStartedAt(OffsetDateTime.now().minusMinutes(8));
-
-		var waiting = newAttendance("Fila Cartao", AttendanceSubject.CARD_PROBLEM);
-		waiting.setTeam(TeamType.CARDS);
-		waiting.setStatus(AttendanceStatus.WAITING);
-
-		when(attendanceRepository.countByAttendantIdAndStatus(releasedAttendant.getId(), AttendanceStatus.IN_PROGRESS))
-			.thenReturn(2L);
-		when(attendanceRepository.findFirstByTeamAndStatusOrderByCreatedAtAsc(TeamType.CARDS, AttendanceStatus.WAITING))
-			.thenReturn(Optional.of(waiting));
 
 		var finished = distributionService.finishAttendance(inProgress);
 
 		assertThat(finished.getStatus()).isEqualTo(AttendanceStatus.FINISHED);
 		assertThat(finished.getFinishedAt()).isNotNull();
-		assertThat(waiting.getStatus()).isEqualTo(AttendanceStatus.IN_PROGRESS);
-		assertThat(waiting.getAttendant()).isSameAs(releasedAttendant);
-		assertThat(waiting.getStartedAt()).isNotNull();
-		verify(attendanceRepository).findFirstByTeamAndStatusOrderByCreatedAtAsc(TeamType.CARDS, AttendanceStatus.WAITING);
-		verify(attendanceRepository).save(waiting);
-	}
-
-	@Test
-	void shouldKeepQueueSeparatedByTeamWhenFinishing() {
-		var releasedAttendant = attendant(30L, "Julia", TeamType.CARDS);
-		var inProgress = new Attendance();
-		inProgress.setTeam(TeamType.CARDS);
-		inProgress.setMessage("Mensagem em atendimento");
-		inProgress.setStatus(AttendanceStatus.IN_PROGRESS);
-		inProgress.setAttendant(releasedAttendant);
-
-		when(attendanceRepository.countByAttendantIdAndStatus(releasedAttendant.getId(), AttendanceStatus.IN_PROGRESS))
-			.thenReturn(1L);
-		when(attendanceRepository.findFirstByTeamAndStatusOrderByCreatedAtAsc(TeamType.CARDS, AttendanceStatus.WAITING))
-			.thenReturn(Optional.empty());
-
-		distributionService.finishAttendance(inProgress);
-
-		verify(attendanceRepository).findFirstByTeamAndStatusOrderByCreatedAtAsc(TeamType.CARDS, AttendanceStatus.WAITING);
-		verify(attendanceRepository, never())
-			.findFirstByTeamAndStatusOrderByCreatedAtAsc(TeamType.LOANS, AttendanceStatus.WAITING);
 		verify(attendanceRepository).save(inProgress);
 	}
 
 	@Test
-	void shouldNotRedistributeWhenReleasedAttendantIsStillAtCapacity() {
-		var releasedAttendant = attendant(40L, "Rafa", TeamType.LOANS);
+	void shouldNotQueryWaitingQueueWhenFinishingAttendance() {
 		var inProgress = new Attendance();
 		inProgress.setTeam(TeamType.LOANS);
 		inProgress.setMessage("Mensagem em atendimento");
 		inProgress.setStatus(AttendanceStatus.IN_PROGRESS);
-		inProgress.setAttendant(releasedAttendant);
-
-		when(attendanceRepository.countByAttendantIdAndStatus(releasedAttendant.getId(), AttendanceStatus.IN_PROGRESS))
-			.thenReturn(3L);
 
 		distributionService.finishAttendance(inProgress);
 
 		verify(attendanceRepository, never())
-			.findFirstByTeamAndStatusOrderByCreatedAtAsc(eq(TeamType.LOANS), eq(AttendanceStatus.WAITING));
+			.findFirstByTeamAndStatusOrderByCreatedAtAsc(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
 	}
 
 	private Attendance newAttendance(String customerName, AttendanceSubject subject) {

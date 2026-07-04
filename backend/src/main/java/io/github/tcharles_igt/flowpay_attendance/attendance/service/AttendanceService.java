@@ -41,7 +41,19 @@ public class AttendanceService {
 		attendance.setCustomerName(request.customerName());
 		attendance.setMessage(request.message());
 		attendance.setSubject(request.subject());
-		var response = toResponse(attendanceDistributionService.distributeNewAttendance(attendance));
+		var response = toResponse(attendanceDistributionService.queueNewAttendance(attendance));
+		publishDashboardUpdateAfterCommit();
+		return response;
+	}
+
+	@Transactional
+	public AttendanceResponse start(Long attendanceId) {
+		var attendance = attendanceRepository.findById(attendanceId)
+			.orElseThrow(() -> new ResourceNotFoundException("Attendance not found: " + attendanceId));
+		if (attendance.getStatus() != AttendanceStatus.WAITING) {
+			throw new BusinessException("Only waiting attendances can be started");
+		}
+		var response = toResponse(attendanceDistributionService.startAttendance(attendance));
 		publishDashboardUpdateAfterCommit();
 		return response;
 	}
