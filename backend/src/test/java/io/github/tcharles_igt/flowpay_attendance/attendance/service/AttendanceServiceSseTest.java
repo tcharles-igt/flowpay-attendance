@@ -48,39 +48,12 @@ class AttendanceServiceSseTest {
 		attendance.setTeam(TeamType.CARDS);
 		attendance.setStatus(AttendanceStatus.WAITING);
 		setId(attendance, 1L);
-		when(attendanceDistributionService.queueNewAttendance(org.mockito.ArgumentMatchers.any(Attendance.class)))
+		when(attendanceDistributionService.distributeNewAttendance(org.mockito.ArgumentMatchers.any(Attendance.class)))
 			.thenReturn(attendance);
 
 		TransactionSynchronizationManager.initSynchronization();
 		try {
 			attendanceService.create(new AttendanceRequest("Cliente SSE", "Mensagem SSE", AttendanceSubject.CARD_PROBLEM));
-
-			verify(dashboardStreamService, never()).publishDashboardUpdate();
-
-			TransactionSynchronizationManager.getSynchronizations()
-				.forEach(TransactionSynchronization::afterCommit);
-
-			verify(dashboardStreamService).publishDashboardUpdate();
-		} finally {
-			TransactionSynchronizationManager.clearSynchronization();
-		}
-	}
-
-	@Test
-	void shouldPublishDashboardUpdateOnlyAfterStartCommit() {
-		var attendance = new Attendance();
-		setId(attendance, 11L);
-		attendance.setCustomerName("Cliente Iniciado");
-		attendance.setMessage("Mensagem Iniciado");
-		attendance.setSubject(AttendanceSubject.CARD_PROBLEM);
-		attendance.setTeam(TeamType.CARDS);
-		attendance.setStatus(AttendanceStatus.WAITING);
-		when(attendanceRepository.findById(11L)).thenReturn(Optional.of(attendance));
-		when(attendanceDistributionService.startAttendance(attendance)).thenReturn(attendance);
-
-		TransactionSynchronizationManager.initSynchronization();
-		try {
-			attendanceService.start(11L);
 
 			verify(dashboardStreamService, never()).publishDashboardUpdate();
 

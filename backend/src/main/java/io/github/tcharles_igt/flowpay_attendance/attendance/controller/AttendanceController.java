@@ -40,7 +40,10 @@ public class AttendanceController {
 	@PostMapping
 	@Operation(
 		summary = "Abrir novo atendimento",
-		description = "Cria um atendimento e o coloca na fila do time responsavel com status WAITING."
+		description = """
+			Cria um atendimento, identifica o time responsavel pelo assunto e tenta distribuicao imediata.
+			Quando houver capacidade disponivel, o atendimento nasce em IN_PROGRESS; caso contrario, entra em WAITING.
+			"""
 	)
 	@ApiResponses({
 		@ApiResponse(responseCode = "201", description = "Atendimento criado com sucesso."),
@@ -77,28 +80,6 @@ public class AttendanceController {
 	})
 	public AttendanceResponse findById(@PathVariable Long id) {
 		return attendanceService.findById(id);
-	}
-
-	@PatchMapping("/{id}/start")
-	@Operation(
-		summary = "Iniciar atendimento",
-		description = "Inicia um atendimento em fila, validando capacidade disponivel do time no momento da acao manual."
-	)
-	@ApiResponses({
-		@ApiResponse(responseCode = "200", description = "Atendimento iniciado com sucesso."),
-		@ApiResponse(
-			responseCode = "404",
-			description = "Atendimento nao encontrado.",
-			content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
-		),
-		@ApiResponse(
-			responseCode = "422",
-			description = "Estado invalido ou falta de capacidade para iniciar o atendimento.",
-			content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))
-		)
-	})
-	public AttendanceResponse start(@PathVariable Long id) {
-		return attendanceService.start(id);
 	}
 
 	@PatchMapping("/{id}/finish")

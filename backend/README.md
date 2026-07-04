@@ -10,14 +10,13 @@ Aplicacao Spring Boot responsavel pela API REST e pela regra de distribuicao de 
 - JUnit
 - Mockito
 
-## Estrutura atual
+## Comportamento implementado
 
-O modulo ja possui a base minima para evolucao:
-
-- `pom.xml` configurado com Spring Boot;
-- classe principal `FlowpayAttendanceBackendApplication`;
-- `application.yaml` com o nome da aplicacao;
-- teste inicial de contexto para validar o bootstrap da aplicacao.
+- `POST /api/attendances` identifica o time pelo assunto e tenta distribuicao imediata.
+- Se houver capacidade no time, o atendimento nasce em `IN_PROGRESS`.
+- Se o time estiver lotado, o atendimento nasce em `WAITING`.
+- `PATCH /api/attendances/{id}/finish` finaliza o atendimento e promove automaticamente o `WAITING` mais antigo do mesmo time quando houver capacidade.
+- A selecao de capacidade considera apenas atendentes ativos com menos de 3 atendimentos `IN_PROGRESS`.
 
 ## Comandos uteis
 
@@ -39,9 +38,11 @@ O backend esta configurado para subir na porta `8080`.
 
 As migrations do Flyway rodam automaticamente na subida da aplicacao.
 
-## Proximos passos
+## Endpoints principais
 
-- definir dependencias de persistencia e documentacao da API;
-- modelar dominios como `attendant` e `attendance`;
-- configurar banco de dados e migracoes;
-- implementar a regra de distribuicao dos atendimentos.
+- `POST /api/attendances`
+- `GET /api/attendances`
+- `GET /api/attendances/{id}`
+- `PATCH /api/attendances/{id}/finish`
+- `GET /api/dashboard`
+- `GET /api/dashboard/events`

@@ -23,6 +23,8 @@ public record AttendanceResponse(
 	AttendanceStatus status,
 	@Schema(example = "3")
 	Long attendantId,
+	@Schema(example = "Joao")
+	String attendantName,
 	@Schema(example = "2026-07-03T11:50:00Z")
 	OffsetDateTime createdAt,
 	@Schema(example = "2026-07-03T11:51:00Z")

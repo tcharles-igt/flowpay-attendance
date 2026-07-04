@@ -37,23 +37,9 @@ public class AttendanceDistributionService {
 	}
 
 	@Transactional
-	public Attendance queueNewAttendance(Attendance attendance) {
+	public Attendance distributeNewAttendance(Attendance attendance) {
 		attendance.setTeam(resolveTeam(attendance.getSubject()));
-		attendance.setAttendant(null);
-		attendance.setStatus(AttendanceStatus.WAITING);
-		attendance.setStartedAt(null);
-		attendance.setFinishedAt(null);
-		return attendanceRepository.save(attendance);
-	}
-
-	@Transactional
-	public Attendance startAttendance(Attendance attendance) {
 		assignIfPossible(attendance);
-		if (attendance.getStatus() != AttendanceStatus.IN_PROGRESS) {
-			throw new io.github.tcharles_igt.flowpay_attendance.shared.exception.BusinessException(
-				"No attendant capacity available for this attendance right now"
-			);
-		}
 		return attendanceRepository.save(attendance);
 	}
 
@@ -62,7 +48,16 @@ public class AttendanceDistributionService {
 		attendance.setStatus(AttendanceStatus.FINISHED);
 		attendance.setFinishedAt(OffsetDateTime.now());
 		attendanceRepository.save(attendance);
+		redistributeOldestWaitingAttendance(attendance.getTeam());
 		return attendance;
+	}
+
+	private void redistributeOldestWaitingAttendance(TeamType team) {
+		attendanceRepository.findFirstByTeamAndStatusOrderByCreatedAtAsc(team, AttendanceStatus.WAITING)
+			.ifPresent(waitingAttendance -> {
+				assignIfPossible(waitingAttendance);
+				attendanceRepository.save(waitingAttendance);
+			});
 	}
 
 	void assignIfPossible(Attendance attendance) {
@@ -75,6 +70,7 @@ public class AttendanceDistributionService {
 		attendance.setAttendant(null);
 		attendance.setStatus(AttendanceStatus.WAITING);
 		attendance.setStartedAt(null);
+		attendance.setFinishedAt(null);
 	}
 
 	private java.util.Optional<io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant> findAvailableAttendant(

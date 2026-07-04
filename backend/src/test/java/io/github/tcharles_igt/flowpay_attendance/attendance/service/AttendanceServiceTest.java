@@ -1,7 +1,6 @@
 package io.github.tcharles_igt.flowpay_attendance.attendance.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.OffsetDateTime;
 
@@ -20,8 +19,6 @@ import io.github.tcharles_igt.flowpay_attendance.attendance.repository.Attendanc
 import io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant;
 import io.github.tcharles_igt.flowpay_attendance.attendant.repository.AttendantRepository;
 import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
-import io.github.tcharles_igt.flowpay_attendance.shared.exception.BusinessException;
-
 @SpringBootTest
 @Transactional
 class AttendanceServiceTest {
@@ -39,13 +36,14 @@ class AttendanceServiceTest {
 	private EntityManager entityManager;
 
 	@Test
-	void shouldMapCardProblemToCardsAndQueueAttendance() {
+	void shouldMapCardProblemToCardsAndStartAttendanceWhenCapacityExists() {
 		var response = attendanceService.create(new AttendanceRequest("Cliente Cartao", "Cartao bloqueado", AttendanceSubject.CARD_PROBLEM));
 
 		assertThat(response.team()).isEqualTo(TeamType.CARDS);
-		assertThat(response.status()).isEqualTo(AttendanceStatus.WAITING);
-		assertThat(response.attendantId()).isNull();
-		assertThat(response.startedAt()).isNull();
+		assertThat(response.status()).isEqualTo(AttendanceStatus.IN_PROGRESS);
+		assertThat(response.attendantId()).isNotNull();
+		assertThat(response.attendantName()).isNotBlank();
+		assertThat(response.startedAt()).isNotNull();
 		assertThat(response.message()).isEqualTo("Cartao bloqueado");
 	}
 
@@ -63,6 +61,7 @@ class AttendanceServiceTest {
 		assertThat(response.team()).isEqualTo(TeamType.CARDS);
 		assertThat(response.status()).isEqualTo(AttendanceStatus.WAITING);
 		assertThat(response.attendantId()).isNull();
+		assertThat(response.attendantName()).isNull();
 		assertThat(response.startedAt()).isNull();
 	}
 
@@ -76,22 +75,23 @@ class AttendanceServiceTest {
 		assertThat(response.team()).isEqualTo(TeamType.CARDS);
 		assertThat(response.status()).isEqualTo(AttendanceStatus.WAITING);
 		assertThat(response.attendantId()).isNull();
+		assertThat(response.attendantName()).isNull();
 		assertThat(response.startedAt()).isNull();
 	}
 
 	@Test
 	void shouldChooseAttendantWithLowerActiveLoad() {
-		var waitingAttendance = attendanceService.create(
-			new AttendanceRequest("Cliente Distribuido", "Quero revisar uma transacao", AttendanceSubject.CARD_PROBLEM)
-		);
 		var joao = findAttendantByName("Joao");
 		var carla = findAttendantByName("Carla");
 		fillCapacity(joao);
 		createInProgressAttendance(carla, "Cliente Carla 1");
 
-		var response = attendanceService.start(waitingAttendance.id());
+		var response = attendanceService.create(
+			new AttendanceRequest("Cliente Distribuido", "Quero revisar uma transacao", AttendanceSubject.CARD_PROBLEM)
+		);
 
 		assertThat(response.attendantId()).isEqualTo(carla.getId());
+		assertThat(response.attendantName()).isEqualTo(carla.getName());
 		assertThat(response.status()).isEqualTo(AttendanceStatus.IN_PROGRESS);
 	}
 
@@ -108,41 +108,7 @@ class AttendanceServiceTest {
 	}
 
 	@Test
-	void shouldStartWaitingAttendanceWhenCapacityExists() {
-		var created = attendanceService.create(new AttendanceRequest("Cliente Inicio", "Mensagem de inicio", AttendanceSubject.LOAN_REQUEST));
-
-		var started = attendanceService.start(created.id());
-
-		assertThat(started.status()).isEqualTo(AttendanceStatus.IN_PROGRESS);
-		assertThat(started.attendantId()).isNotNull();
-		assertThat(started.startedAt()).isNotNull();
-	}
-
-	@Test
-	void shouldRejectStartWhenAttendanceIsNotWaiting() {
-		var joao = findAttendantByName("Joao");
-		var inProgress = createInProgressAttendance(joao, "Ja em atendimento");
-
-		assertThatThrownBy(() -> attendanceService.start(inProgress.getId()))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("Only waiting attendances can be started");
-	}
-
-	@Test
-	void shouldRejectStartWhenNoAttendantCapacityIsAvailable() {
-		fillCapacity(findAttendantByName("Maria"));
-		fillCapacity(findAttendantByName("Pedro"));
-		var created = attendanceService.create(
-			new AttendanceRequest("Cliente Sem Inicio", "Mensagem sem capacidade", AttendanceSubject.LOAN_REQUEST)
-		);
-
-		assertThatThrownBy(() -> attendanceService.start(created.id()))
-			.isInstanceOf(BusinessException.class)
-			.hasMessage("No attendant capacity available for this attendance right now");
-	}
-
-	@Test
-	void shouldKeepWaitingAttendancesInQueueWhenFinishing() {
+	void shouldRedistributeOldestWaitingAttendanceFromSameTeamWhenFinishing() {
 		var joao = findAttendantByName("Joao");
 		createInProgressAttendance(joao, "Joao Cliente 1");
 		createInProgressAttendance(joao, "Joao Cliente 2");
@@ -155,15 +121,15 @@ class AttendanceServiceTest {
 		attendanceService.finish(inProgress.getId());
 
 		var finishedAttendance = attendanceRepository.findById(inProgress.getId()).orElseThrow();
-		var untouchedCardWaiting = attendanceRepository.findById(cardWaiting.getId()).orElseThrow();
+		var redistributedCardWaiting = attendanceRepository.findById(cardWaiting.getId()).orElseThrow();
 		var untouchedLoanWaiting = attendanceRepository.findById(loanWaiting.getId()).orElseThrow();
 
 		assertThat(finishedAttendance.getStatus()).isEqualTo(AttendanceStatus.FINISHED);
 		assertThat(finishedAttendance.getFinishedAt()).isNotNull();
-		assertThat(untouchedCardWaiting.getStatus()).isEqualTo(AttendanceStatus.WAITING);
-		assertThat(untouchedCardWaiting.getCustomerName()).isEqualTo("Fila Cartao");
-		assertThat(untouchedCardWaiting.getAttendant()).isNull();
-		assertThat(untouchedCardWaiting.getStartedAt()).isNull();
+		assertThat(redistributedCardWaiting.getStatus()).isEqualTo(AttendanceStatus.IN_PROGRESS);
+		assertThat(redistributedCardWaiting.getCustomerName()).isEqualTo("Fila Cartao");
+		assertThat(redistributedCardWaiting.getAttendant()).isNotNull();
+		assertThat(redistributedCardWaiting.getStartedAt()).isNotNull();
 		assertThat(untouchedLoanWaiting.getStatus()).isEqualTo(AttendanceStatus.WAITING);
 		assertThat(untouchedLoanWaiting.getCustomerName()).isEqualTo("Fila Emprestimo");
 	}

@@ -61,7 +61,7 @@ class ApiIntegrationTest {
 	}
 
 	@Test
-	void shouldCreateStartListAndFinishAttendance() throws Exception {
+	void shouldCreateListAndFinishAttendance() throws Exception {
 		var created = mockMvc.perform(post("/api/attendances")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("""
@@ -73,7 +73,8 @@ class ApiIntegrationTest {
 					"""))
 			.andExpect(status().isCreated())
 			.andExpect(jsonPath("$.team").value("CARDS"))
-			.andExpect(jsonPath("$.status").value("WAITING"))
+			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+			.andExpect(jsonPath("$.attendantName").isString())
 			.andReturn();
 
 		var attendanceId = JsonTestUtils.readLong(created.getResponse().getContentAsString(), "$.id");
@@ -82,12 +83,8 @@ class ApiIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.id").value(attendanceId))
 			.andExpect(jsonPath("$.customerName").value("Cliente API"))
-			.andExpect(jsonPath("$.message").value("Cartao bloqueado apos compra online"));
-
-		mockMvc.perform(patch("/api/attendances/{id}/start", attendanceId))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
-			.andExpect(jsonPath("$.startedAt").isNotEmpty());
+			.andExpect(jsonPath("$.message").value("Cartao bloqueado apos compra online"))
+			.andExpect(jsonPath("$.attendantName").isString());
 
 		mockMvc.perform(patch("/api/attendances/{id}/finish", attendanceId))
 			.andExpect(status().isOk())
@@ -113,6 +110,7 @@ class ApiIntegrationTest {
 			.andExpect(jsonPath("$.subject").value("OTHER"))
 			.andExpect(jsonPath("$.team").value("OTHERS"))
 			.andExpect(jsonPath("$.status").exists())
+			.andExpect(jsonPath("$.attendantName").isString())
 			.andExpect(jsonPath("$.createdAt").isNotEmpty());
 	}
 
@@ -133,28 +131,31 @@ class ApiIntegrationTest {
 			.andExpect(jsonPath("$.id").value(inProgress.getId()))
 			.andExpect(jsonPath("$.status").value("FINISHED"))
 			.andExpect(jsonPath("$.attendantId").value(joao.getId()))
+			.andExpect(jsonPath("$.attendantName").value(joao.getName()))
 			.andExpect(jsonPath("$.message").value("Mensagem para finalizar"))
 			.andExpect(jsonPath("$.finishedAt").isNotEmpty());
 	}
 
 	@Test
-	void shouldStartAttendanceEndpointAndReturnStartedPayload() throws Exception {
-		var waiting = createAttendance(
-			"Cliente Inicio API",
-			AttendanceStatus.WAITING,
-			AttendanceSubject.CARD_PROBLEM,
-			TeamType.CARDS,
-			null,
-			"Mensagem para iniciar"
-		);
+	void shouldCreateAttendanceAsWaitingWhenTeamHasNoCapacity() throws Exception {
+		var joao = findAttendantByName("Joao");
+		var carla = findAttendantByName("Carla");
+		fillCapacity(joao);
+		fillCapacity(carla);
 
-		mockMvc.perform(patch("/api/attendances/{id}/start", waiting.getId()))
-			.andExpect(status().isOk())
-			.andExpect(jsonPath("$.id").value(waiting.getId()))
-			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
-			.andExpect(jsonPath("$.attendantId").isNumber())
-			.andExpect(jsonPath("$.message").value("Mensagem para iniciar"))
-			.andExpect(jsonPath("$.startedAt").isNotEmpty());
+		mockMvc.perform(post("/api/attendances")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "customerName": "Cliente Sem Capacidade",
+					  "message": "Mensagem em fila",
+					  "subject": "CARD_PROBLEM"
+					}
+					"""))
+			.andExpect(status().isCreated())
+			.andExpect(jsonPath("$.status").value("WAITING"))
+			.andExpect(jsonPath("$.attendantId").doesNotExist())
+			.andExpect(jsonPath("$.attendantName").doesNotExist());
 	}
 
 	@Test
@@ -218,20 +219,57 @@ class ApiIntegrationTest {
 	}
 
 	@Test
-	void shouldReturnBusinessErrorWhenStartingNonWaitingAttendance() throws Exception {
+	void shouldRedistributeOldestWaitingAttendanceWhenFinishing() throws Exception {
 		var joao = findAttendantByName("Joao");
-		var inProgress = createAttendance(
-			"Ja em atendimento",
+		createAttendance(
+			"Capacidade Joao 1",
 			AttendanceStatus.IN_PROGRESS,
 			AttendanceSubject.CARD_PROBLEM,
 			TeamType.CARDS,
 			joao,
-			"Mensagem em andamento"
+			"Mensagem em andamento 1"
+		);
+		createAttendance(
+			"Capacidade Joao 2",
+			AttendanceStatus.IN_PROGRESS,
+			AttendanceSubject.CARD_PROBLEM,
+			TeamType.CARDS,
+			joao,
+			"Mensagem em andamento 2"
+		);
+		var inProgress = createAttendance(
+			"Em atendimento",
+			AttendanceStatus.IN_PROGRESS,
+			AttendanceSubject.CARD_PROBLEM,
+			TeamType.CARDS,
+			joao,
+			"Mensagem em andamento 3"
+		);
+		var waiting = createAttendance(
+			"Cliente em fila",
+			AttendanceStatus.WAITING,
+			AttendanceSubject.CARD_PROBLEM,
+			TeamType.CARDS,
+			null,
+			"Mensagem em fila"
 		);
 
-		mockMvc.perform(patch("/api/attendances/{id}/start", inProgress.getId()))
-			.andExpect(status().isUnprocessableEntity())
-			.andExpect(jsonPath("$.message").value("Only waiting attendances can be started"));
+		mockMvc.perform(patch("/api/attendances/{id}/finish", inProgress.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("FINISHED"));
+
+		mockMvc.perform(get("/api/attendances/{id}", waiting.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+			.andExpect(jsonPath("$.attendantId").isNumber())
+			.andExpect(jsonPath("$.attendantName").isString())
+			.andExpect(jsonPath("$.startedAt").isNotEmpty());
+	}
+
+	private void fillCapacity(Attendant attendant) {
+		createAttendance(attendant.getName() + " Cliente 1", AttendanceStatus.IN_PROGRESS, resolveSubject(attendant.getTeam()), attendant.getTeam(), attendant, "Mensagem 1");
+		createAttendance(attendant.getName() + " Cliente 2", AttendanceStatus.IN_PROGRESS, resolveSubject(attendant.getTeam()), attendant.getTeam(), attendant, "Mensagem 2");
+		createAttendance(attendant.getName() + " Cliente 3", AttendanceStatus.IN_PROGRESS, resolveSubject(attendant.getTeam()), attendant.getTeam(), attendant, "Mensagem 3");
 	}
 
 	private Attendant findAttendantByName(String name) {
@@ -260,5 +298,13 @@ class ApiIntegrationTest {
 			attendance.setStartedAt(java.time.OffsetDateTime.now().minusMinutes(5));
 		}
 		return attendanceRepository.save(attendance);
+	}
+
+	private AttendanceSubject resolveSubject(TeamType team) {
+		return switch (team) {
+			case CARDS -> AttendanceSubject.CARD_PROBLEM;
+			case LOANS -> AttendanceSubject.LOAN_REQUEST;
+			case OTHERS -> AttendanceSubject.OTHER;
+		};
 	}
 }
