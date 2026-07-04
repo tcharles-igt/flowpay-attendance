@@ -27,20 +27,16 @@ class AttendantRepositoryTest {
 	void shouldSeedInitialAttendants() {
 		var attendants = attendantRepository.findAll();
 
-		assertThat(attendants).hasSize(6);
+		assertThat(attendants).hasSize(3);
 		assertThat(attendants)
 			.extracting(Attendant::getName)
-			.containsExactlyInAnyOrder("Joao", "Carla", "Maria", "Pedro", "Ana", "Lucas");
+			.containsExactlyInAnyOrder("Joao", "Maria", "Ana");
 	}
 
 	@Test
 	void shouldFindAvailableAttendantsByTeamOrderedByLowerLoad() {
 		var joao = attendantRepository.findAll().stream()
 			.filter(attendant -> attendant.getName().equals("Joao"))
-			.findFirst()
-			.orElseThrow();
-		var carla = attendantRepository.findAll().stream()
-			.filter(attendant -> attendant.getName().equals("Carla"))
 			.findFirst()
 			.orElseThrow();
 		var leastLoaded = createAttendant("Bruna", TeamType.CARDS);
@@ -50,7 +46,6 @@ class AttendantRepositoryTest {
 		attendantRepository.save(inactive);
 
 		fillCapacity(joao);
-		fillCapacity(carla);
 		createInProgressAttendance(leastLoaded, "Cliente 1");
 		createInProgressAttendance(fullCapacity, "Cliente 2");
 		createInProgressAttendance(fullCapacity, "Cliente 3");

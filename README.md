@@ -31,9 +31,10 @@ O Docker continua sendo necessario mesmo no modo local se voce quiser subir apen
 O fluxo principal de avaliacao e este:
 
 ```bash
-cp .env.example .env
-docker compose up --build
+docker compose up --build -d
 ```
+
+Se quiser sobrescrever portas ou credenciais, copie `.env.example` para `.env` antes da subida. Sem isso, o Compose usa os valores default ja definidos no `docker-compose.yml`.
 
 A aplicacao fica disponivel em:
 
@@ -162,6 +163,12 @@ Times com atendentes seeded:
 - `LOANS`
 - `OTHERS`
 
+Mock inicial atual:
+
+- `Joao` em `CARDS`
+- `Maria` em `LOANS`
+- `Ana` em `OTHERS`
+
 Isso permite testar de imediato:
 
 - criacao de atendimento com distribuicao direta;
@@ -191,7 +198,7 @@ Isso permite testar de imediato:
 
 ## Como validar o fluxo principal
 
-1. Suba tudo com `docker compose up --build`.
+1. Suba tudo com `docker compose up --build -d`.
 2. Abra o dashboard em [http://localhost:4200](http://localhost:4200).
 3. Crie novos atendimentos pelo formulario da tela.
 4. Observe o atendimento entrar em `IN_PROGRESS` quando houver vaga.

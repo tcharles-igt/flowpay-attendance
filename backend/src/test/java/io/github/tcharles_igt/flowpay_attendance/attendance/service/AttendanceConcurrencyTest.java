@@ -41,12 +41,6 @@ class AttendanceConcurrencyTest {
 			.filter(attendant -> attendant.getName().equals("Joao"))
 			.findFirst()
 			.orElseThrow();
-		var carla = attendantRepository.findAll().stream()
-			.filter(attendant -> attendant.getName().equals("Carla"))
-			.findFirst()
-			.orElseThrow();
-		carla.setActive(false);
-		attendantRepository.saveAndFlush(carla);
 
 		int requestCount = 6;
 		var startGate = new CountDownLatch(1);
@@ -84,8 +78,6 @@ class AttendanceConcurrencyTest {
 			executor.shutdownNow();
 			assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
 			attendanceRepository.deleteAllInBatch();
-			carla.setActive(true);
-			attendantRepository.saveAndFlush(carla);
 		}
 	}
 }

@@ -196,9 +196,7 @@ class ApiIntegrationTest {
 	@Test
 	void shouldCreateAttendanceAsWaitingWhenTeamHasNoCapacity() throws Exception {
 		var joao = findAttendantByName("Joao");
-		var carla = findAttendantByName("Carla");
 		fillCapacity(joao);
-		fillCapacity(carla);
 
 		mockMvc.perform(post("/api/attendances")
 				.contentType(MediaType.APPLICATION_JSON)

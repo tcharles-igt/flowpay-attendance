@@ -52,9 +52,6 @@ class AttendanceServiceTest {
 		var joao = findAttendantByName("Joao");
 		joao.setActive(false);
 		attendantRepository.save(joao);
-		var carla = findAttendantByName("Carla");
-		carla.setActive(false);
-		attendantRepository.save(carla);
 
 		var response = attendanceService.create(new AttendanceRequest("Cliente Sem Capacidade", "Preciso de ajuda com o cartao", AttendanceSubject.CARD_PROBLEM));
 
@@ -68,7 +65,6 @@ class AttendanceServiceTest {
 	@Test
 	void shouldPutAttendanceInWaitingWhenAllAttendantsFromTeamAreFull() {
 		fillCapacity(findAttendantByName("Joao"));
-		fillCapacity(findAttendantByName("Carla"));
 
 		var response = attendanceService.create(new AttendanceRequest("Cliente Fila", "Nao consegui concluir a compra", AttendanceSubject.CARD_PROBLEM));
 
@@ -82,7 +78,7 @@ class AttendanceServiceTest {
 	@Test
 	void shouldChooseAttendantWithLowerActiveLoad() {
 		var joao = findAttendantByName("Joao");
-		var carla = findAttendantByName("Carla");
+		var carla = createAttendant("Carla", TeamType.CARDS);
 		fillCapacity(joao);
 		createInProgressAttendance(carla, "Cliente Carla 1");
 
@@ -139,6 +135,14 @@ class AttendanceServiceTest {
 			.filter(attendant -> attendant.getName().equals(name))
 			.findFirst()
 			.orElseThrow();
+	}
+
+	private Attendant createAttendant(String name, TeamType team) {
+		var attendant = new Attendant();
+		attendant.setName(name);
+		attendant.setTeam(team);
+		attendant.setActive(true);
+		return attendantRepository.save(attendant);
 	}
 
 	private void fillCapacity(Attendant attendant) {
