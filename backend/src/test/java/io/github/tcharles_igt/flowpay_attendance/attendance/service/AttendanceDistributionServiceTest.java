@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import io.github.tcharles_igt.flowpay_attendance.attendance.repository.Attendanc
 import io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant;
 import io.github.tcharles_igt.flowpay_attendance.attendant.repository.AttendantRepository;
 import io.github.tcharles_igt.flowpay_attendance.shared.domain.TeamType;
+
 @ExtendWith(MockitoExtension.class)
 class AttendanceDistributionServiceTest {
 
@@ -59,7 +61,7 @@ class AttendanceDistributionServiceTest {
 	@Test
 	void shouldCreateWaitingAttendanceWhenNoCapacityExists() {
 		var attendance = newAttendance("Cliente Disponivel", AttendanceSubject.CARD_PROBLEM);
-		when(attendantRepository.findAvailableByTeam(TeamType.CARDS, AttendanceStatus.IN_PROGRESS, 3))
+		when(attendantRepository.findActiveByTeamForUpdate(TeamType.CARDS))
 			.thenReturn(List.of());
 
 		var queued = distributionService.distributeNewAttendance(attendance);
@@ -75,8 +77,10 @@ class AttendanceDistributionServiceTest {
 	void shouldCreateInProgressAttendanceWhenCapacityExists() {
 		var availableAttendant = attendant(10L, "Joao", TeamType.CARDS);
 		var attendance = newAttendance("Cliente Disponivel", AttendanceSubject.CARD_PROBLEM);
-		when(attendantRepository.findAvailableByTeam(TeamType.CARDS, AttendanceStatus.IN_PROGRESS, 3))
+		when(attendantRepository.findActiveByTeamForUpdate(TeamType.CARDS))
 			.thenReturn(List.of(availableAttendant));
+		when(attendanceRepository.countByAttendantIdAndStatus(availableAttendant.getId(), AttendanceStatus.IN_PROGRESS))
+			.thenReturn(0L);
 
 		var distributed = distributionService.distributeNewAttendance(attendance);
 
@@ -97,10 +101,12 @@ class AttendanceDistributionServiceTest {
 		waiting.setTeam(TeamType.CARDS);
 		waiting.setMessage("Mensagem em fila");
 		waiting.setStatus(AttendanceStatus.WAITING);
-		when(attendanceRepository.findFirstByTeamAndStatusOrderByCreatedAtAsc(TeamType.CARDS, AttendanceStatus.WAITING))
-			.thenReturn(java.util.Optional.of(waiting));
-		when(attendantRepository.findAvailableByTeam(TeamType.CARDS, AttendanceStatus.IN_PROGRESS, 3))
+		when(attendanceRepository.findFirstWaitingByTeamAndStatusForUpdate(TeamType.CARDS.name(), AttendanceStatus.WAITING.name()))
+			.thenReturn(Optional.of(waiting));
+		when(attendantRepository.findActiveByTeamForUpdate(TeamType.CARDS))
 			.thenReturn(List.of(availableAttendant));
+		when(attendanceRepository.countByAttendantIdAndStatus(availableAttendant.getId(), AttendanceStatus.IN_PROGRESS))
+			.thenReturn(2L);
 
 		var finished = distributionService.finishAttendance(inProgress);
 

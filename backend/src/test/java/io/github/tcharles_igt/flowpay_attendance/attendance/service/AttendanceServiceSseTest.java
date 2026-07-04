@@ -76,7 +76,7 @@ class AttendanceServiceSseTest {
 		attendance.setTeam(TeamType.CARDS);
 		attendance.setStatus(AttendanceStatus.IN_PROGRESS);
 		attendance.setStartedAt(OffsetDateTime.now().minusMinutes(5));
-		when(attendanceRepository.findById(10L)).thenReturn(Optional.of(attendance));
+		when(attendanceRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(attendance));
 		when(attendanceDistributionService.finishAttendance(attendance)).thenReturn(attendance);
 
 		TransactionSynchronizationManager.initSynchronization();

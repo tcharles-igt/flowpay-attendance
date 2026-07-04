@@ -4,8 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import io.github.tcharles_igt.flowpay_attendance.attendance.domain.AttendanceStatus;
 import io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant;
@@ -89,4 +92,14 @@ public interface AttendantRepository extends JpaRepository<Attendant, Long> {
 		@Param("inProgressStatus") AttendanceStatus inProgressStatus,
 		@Param("maxAttendances") long maxAttendances
 	);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		select attendant
+		from Attendant attendant
+		where attendant.active = true
+			and attendant.team = :team
+		order by attendant.id
+		""")
+	List<Attendant> findActiveByTeamForUpdate(@Param("team") TeamType team);
 }

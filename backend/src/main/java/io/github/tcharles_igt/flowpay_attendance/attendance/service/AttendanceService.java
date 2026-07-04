@@ -48,7 +48,7 @@ public class AttendanceService {
 
 	@Transactional
 	public AttendanceResponse finish(Long attendanceId) {
-		var attendance = attendanceRepository.findById(attendanceId)
+		var attendance = attendanceRepository.findByIdForUpdate(attendanceId)
 			.orElseThrow(() -> new ResourceNotFoundException("Attendance not found: " + attendanceId));
 		if (attendance.getStatus() != AttendanceStatus.IN_PROGRESS) {
 			throw new BusinessException("Only in-progress attendances can be finished");

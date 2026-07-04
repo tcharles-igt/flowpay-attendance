@@ -43,8 +43,10 @@ class AttendanceRepositoryTest {
 		entityManager.flush();
 		entityManager.clear();
 
-		var nextAttendance = attendanceRepository.findFirstByTeamAndStatusOrderByCreatedAtAsc(TeamType.CARDS,
-			AttendanceStatus.WAITING);
+		var nextAttendance = attendanceRepository.findFirstWaitingByTeamAndStatusForUpdate(
+			TeamType.CARDS.name(),
+			AttendanceStatus.WAITING.name()
+		);
 
 		assertThat(nextAttendance).isPresent();
 		assertThat(nextAttendance.get().getCustomerName()).isEqualTo(oldestWaiting.getCustomerName());

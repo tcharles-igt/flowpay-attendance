@@ -1,6 +1,7 @@
 package io.github.tcharles_igt.flowpay_attendance.attendance.service;
 
 import java.time.OffsetDateTime;
+import java.util.Comparator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +52,7 @@ public class AttendanceDistributionService {
 	}
 
 	private void redistributeOldestWaitingAttendance(TeamType team) {
-		attendanceRepository.findFirstByTeamAndStatusOrderByCreatedAtAsc(team, AttendanceStatus.WAITING)
+		attendanceRepository.findFirstWaitingByTeamAndStatusForUpdate(team.name(), AttendanceStatus.WAITING.name())
 			.ifPresent(waitingAttendance -> {
 				assignIfPossible(waitingAttendance);
 				attendanceRepository.save(waitingAttendance);
@@ -74,13 +75,16 @@ public class AttendanceDistributionService {
 	private java.util.Optional<io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant> findAvailableAttendant(
 		TeamType team
 	) {
-		return attendantRepository.findAvailableByTeam(
-			team,
-			AttendanceStatus.IN_PROGRESS,
-			io.github.tcharles_igt.flowpay_attendance.attendant.service.AttendantCapacityPolicy.MAX_SIMULTANEOUS_ATTENDANCES
-		)
+		return attendantRepository.findActiveByTeamForUpdate(team)
 			.stream()
-			.findFirst();
+			.map(attendant -> new AttendantLoad(
+				attendant,
+				attendanceRepository.countByAttendantIdAndStatus(attendant.getId(), AttendanceStatus.IN_PROGRESS)
+			))
+			.filter(load -> load.activeAttendances() < io.github.tcharles_igt.flowpay_attendance.attendant.service.AttendantCapacityPolicy.MAX_SIMULTANEOUS_ATTENDANCES)
+			.min(Comparator.comparingLong(AttendantLoad::activeAttendances)
+				.thenComparing(load -> load.attendant().getId()))
+			.map(AttendantLoad::attendant);
 	}
 
 	private void assignAttendance(
@@ -92,4 +96,9 @@ public class AttendanceDistributionService {
 		attendance.setStartedAt(OffsetDateTime.now());
 		attendance.setFinishedAt(null);
 	}
+
+	private record AttendantLoad(
+		io.github.tcharles_igt.flowpay_attendance.attendant.domain.Attendant attendant,
+		long activeAttendances
+	) {}
 }
